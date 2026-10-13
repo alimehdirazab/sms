@@ -12,6 +12,12 @@ import '../../features/parent/home/parent_home_screen.dart';
 import '../../features/parent/marks/parent_marks_screen.dart';
 import '../../features/parent/notifications/parent_notifications_screen.dart';
 import '../../features/parent/profile/parent_profile_screen.dart';
+import '../../features/parent/leave/parent_leave_screen.dart';
+import '../../features/parent/fees/parent_fees_screen.dart';
+import '../../features/parent/calendar/parent_calendar_screen.dart';
+import '../../features/teacher/leave/teacher_leave_screen.dart';
+import '../../features/teacher/calendar/teacher_calendar_screen.dart';
+import '../../features/teacher/schedule/teacher_weekly_schedule_screen.dart';
 
 class RouteNames {
   static const splash = 'splash';
@@ -23,11 +29,17 @@ class RouteNames {
   static const teacherAttendance = 'teacherAttendance';
   static const teacherMarks = 'teacherMarks';
   static const teacherProfile = 'teacherProfile';
+  static const teacherLeave = 'teacherLeave';
+  static const teacherCalendar = 'teacherCalendar';
+  static const teacherWeeklySchedule = 'teacherWeeklySchedule';
   static const parentShell = 'parentShell';
   static const parentHome = 'parentHome';
   static const parentMarks = 'parentMarks';
   static const parentNotifications = 'parentNotifications';
   static const parentProfile = 'parentProfile';
+  static const parentLeave = 'parentLeave';
+  static const parentFees = 'parentFees';
+  static const parentCalendar = 'parentCalendar';
 }
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -77,7 +89,36 @@ final appRouter = GoRouter(
               path: '/teacher/home',
               name: RouteNames.teacherHome,
               pageBuilder: (context, state) =>
-                  NoTransitionPage(child: const TeacherHomeScreen()),
+                  const NoTransitionPage(child: TeacherHomeScreen()),
+              routes: [
+                GoRoute(
+                  path: 'leave',
+                  name: RouteNames.teacherLeave,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const TeacherLeaveScreen(),
+                    state: state,
+                  ),
+                ),
+                GoRoute(
+                  path: 'calendar',
+                  name: RouteNames.teacherCalendar,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const TeacherCalendarScreen(),
+                    state: state,
+                  ),
+                ),
+                GoRoute(
+                  path: 'schedule',
+                  name: RouteNames.teacherWeeklySchedule,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const TeacherWeeklyScheduleScreen(),
+                    state: state,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -87,7 +128,7 @@ final appRouter = GoRouter(
               path: '/teacher/attendance',
               name: RouteNames.teacherAttendance,
               pageBuilder: (context, state) =>
-                  NoTransitionPage(child: const TeacherAttendanceScreen()),
+                  const NoTransitionPage(child: TeacherAttendanceScreen()),
             ),
           ],
         ),
@@ -97,7 +138,7 @@ final appRouter = GoRouter(
               path: '/teacher/marks',
               name: RouteNames.teacherMarks,
               pageBuilder: (context, state) =>
-                  NoTransitionPage(child: const TeacherMarksScreen()),
+                  const NoTransitionPage(child: TeacherMarksScreen()),
             ),
           ],
         ),
@@ -107,7 +148,7 @@ final appRouter = GoRouter(
               path: '/teacher/profile',
               name: RouteNames.teacherProfile,
               pageBuilder: (context, state) =>
-                  NoTransitionPage(child: const TeacherProfileScreen()),
+                  const NoTransitionPage(child: TeacherProfileScreen()),
             ),
           ],
         ),
@@ -124,7 +165,36 @@ final appRouter = GoRouter(
               path: '/parent/home',
               name: RouteNames.parentHome,
               pageBuilder: (context, state) =>
-                  NoTransitionPage(child: const ParentHomeScreen()),
+                  const NoTransitionPage(child: ParentHomeScreen()),
+              routes: [
+                GoRoute(
+                  path: 'leave',
+                  name: RouteNames.parentLeave,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const ParentLeaveScreen(),
+                    state: state,
+                  ),
+                ),
+                GoRoute(
+                  path: 'fees',
+                  name: RouteNames.parentFees,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const ParentFeesScreen(),
+                    state: state,
+                  ),
+                ),
+                GoRoute(
+                  path: 'calendar',
+                  name: RouteNames.parentCalendar,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const ParentCalendarScreen(),
+                    state: state,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -134,7 +204,7 @@ final appRouter = GoRouter(
               path: '/parent/marks',
               name: RouteNames.parentMarks,
               pageBuilder: (context, state) =>
-                  NoTransitionPage(child: const ParentMarksScreen()),
+                  const NoTransitionPage(child: ParentMarksScreen()),
             ),
           ],
         ),
@@ -144,7 +214,7 @@ final appRouter = GoRouter(
               path: '/parent/notifications',
               name: RouteNames.parentNotifications,
               pageBuilder: (context, state) =>
-                  NoTransitionPage(child: const ParentNotificationsScreen()),
+                  const NoTransitionPage(child: ParentNotificationsScreen()),
             ),
           ],
         ),
@@ -154,7 +224,7 @@ final appRouter = GoRouter(
               path: '/parent/profile',
               name: RouteNames.parentProfile,
               pageBuilder: (context, state) =>
-                  NoTransitionPage(child: const ParentProfileScreen()),
+                  const NoTransitionPage(child: ParentProfileScreen()),
             ),
           ],
         ),

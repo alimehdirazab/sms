@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/teacher_bloc.dart';
+import '../../../core/theme/app_status_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/animated_button.dart';
@@ -164,7 +165,7 @@ class TeacherSubjectsScreen extends StatelessWidget {
             return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: state.subjects.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final subject = state.subjects[index];
                 final colorScheme = Theme.of(context).colorScheme;
@@ -253,7 +254,7 @@ class TeacherExamsScreen extends StatelessWidget {
             return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: state.exams.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final exam = state.exams[index];
                 return Card(
@@ -333,6 +334,7 @@ class StudentMarksEntryScreen extends StatefulWidget {
 class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
   final Map<String, TextEditingController> _obtainedControllers = {};
   final Map<String, TextEditingController> _totalControllers = {};
+  final Map<String, TextEditingController> _remarkControllers = {};
   bool _allFieldsFilled = false;
 
   @override
@@ -347,6 +349,9 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
       c.dispose();
     }
     for (final c in _totalControllers.values) {
+      c.dispose();
+    }
+    for (final c in _remarkControllers.values) {
       c.dispose();
     }
     super.dispose();
@@ -376,8 +381,8 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
         actions: [
           BlocBuilder<TeacherBloc, TeacherState>(
             builder: (context, state) {
-              return IconButton(
-                icon: const Icon(Icons.publish),
+              return const IconButton(
+                icon: Icon(Icons.publish),
                 // Publish disabled for teacher role; enable for admin
                 onPressed: null,
                 tooltip: 'Only admin can publish marks',
@@ -434,6 +439,8 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
                     text: mark.totalMarks > 0
                         ? mark.totalMarks.toString()
                         : '');
+                _remarkControllers[mark.studentId] = TextEditingController(
+                    text: mark.teacherRemarks ?? '');
               }
             }
 
@@ -443,7 +450,7 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16),
                     itemCount: marks.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final mark = marks[index];
                       return _StudentMarkCard(
@@ -451,6 +458,7 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
                         obtainedController:
                             _obtainedControllers[mark.studentId]!,
                         totalController: _totalControllers[mark.studentId]!,
+                        remarkController: _remarkControllers[mark.studentId]!,
                         onChanged: _checkAllFields,
                       );
                     },
@@ -469,13 +477,24 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
                               : () {
                                   final updatedMarks = marks.map((m) {
                                     final obtained = double.tryParse(
-                                        _obtainedControllers[m.studentId]?.text ?? '0');
+                                        _obtainedControllers[m.studentId]
+                                                ?.text ??
+                                            '0');
                                     final total = double.tryParse(
-                                        _totalControllers[m.studentId]?.text ?? '100');
+                                        _totalControllers[m.studentId]
+                                                ?.text ??
+                                            '100');
+                                    final remarks =
+                                        _remarkControllers[m.studentId]
+                                                ?.text
+                                                .trim() ??
+                                            '';
                                     return m.copyWith(
                                       obtainedMarks: obtained ?? 0,
                                       totalMarks: total ?? 100,
                                       status: MarkStatus.draft,
+                                      teacherRemarks:
+                                          remarks.isEmpty ? null : remarks,
                                     );
                                   }).toList();
                                   context
@@ -505,12 +524,14 @@ class _StudentMarkCard extends StatefulWidget {
   final StudentMarkModel mark;
   final TextEditingController obtainedController;
   final TextEditingController totalController;
+  final TextEditingController remarkController;
   final VoidCallback onChanged;
 
   const _StudentMarkCard({
     required this.mark,
     required this.obtainedController,
     required this.totalController,
+    required this.remarkController,
     required this.onChanged,
   });
 
@@ -639,7 +660,9 @@ class _StudentMarkCardState extends State<_StudentMarkCard> {
                     '${_percentage.toStringAsFixed(1)}%',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: _percentage >= 40 ? Colors.green : Colors.red,
+                      color: _percentage >= 40
+                          ? AppStatusColors.of(context).success
+                          : AppStatusColors.of(context).danger,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -662,6 +685,19 @@ class _StudentMarkCardState extends State<_StudentMarkCard> {
                 ],
               ),
             ],
+            const SizedBox(height: 12),
+            TextField(
+              controller: widget.remarkController,
+              maxLines: 2,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Remarks (optional)',
+                hintText: 'e.g. Needs improvement in algebra',
+                prefixIcon: Icon(Icons.rate_review_outlined, size: 20),
+                isDense: true,
+              ),
+              onChanged: (_) => widget.onChanged(),
+            ),
           ],
         ),
       ),
@@ -669,9 +705,10 @@ class _StudentMarkCardState extends State<_StudentMarkCard> {
   }
 
   Color _gradeColor(String grade) {
-    if (grade == 'A+' || grade == 'A') return Colors.green;
-    if (grade == 'B+' || grade == 'B') return Colors.blue;
-    if (grade == 'C') return Colors.orange;
-    return Colors.red;
+    final colors = AppStatusColors.of(context);
+    if (grade == 'A+' || grade == 'A') return colors.success;
+    if (grade == 'B+' || grade == 'B') return colors.info;
+    if (grade == 'C') return colors.warning;
+    return colors.danger;
   }
 }

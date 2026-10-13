@@ -121,6 +121,45 @@ class TeacherProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
+                  // Quick links to schedule, calendar and leave
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.calendar_view_week),
+                            title: const Text('Weekly Timetable'),
+                            subtitle: const Text('Full week class schedule'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => context
+                                .pushNamed(RouteNames.teacherWeeklySchedule),
+                          ),
+                          const Divider(height: 1, indent: 56),
+                          ListTile(
+                            leading: const Icon(Icons.event_available),
+                            title: const Text('Leave Applications'),
+                            subtitle:
+                                const Text('Send requests to the Principal'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () =>
+                                context.pushNamed(RouteNames.teacherLeave),
+                          ),
+                          const Divider(height: 1, indent: 56),
+                          ListTile(
+                            leading: const Icon(Icons.calendar_month),
+                            title: const Text('Academic Calendar'),
+                            subtitle: const Text('Meetings, exams & events'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () =>
+                                context.pushNamed(RouteNames.teacherCalendar),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
                   // Logout
                   SizedBox(
                     width: double.infinity,

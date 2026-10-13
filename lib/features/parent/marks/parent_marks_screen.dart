@@ -71,7 +71,7 @@ class _ParentMarksScreenState extends State<ParentMarksScreen> {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: profile.children.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
                           final child = profile.children[index];
                           final isSelected =
@@ -263,7 +263,7 @@ class _ParentMarksScreenState extends State<ParentMarksScreen> {
                       isStrokeCapRound: true,
                       dotData: FlDotData(
                         show: true,
-                        getDotPainter: (spot, _, __, ___) =>
+                        getDotPainter: (spot, _, _, _) =>
                             FlDotCirclePainter(
                           radius: 4,
                           color: colorScheme.primary,

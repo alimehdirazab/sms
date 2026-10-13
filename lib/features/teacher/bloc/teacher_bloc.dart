@@ -4,6 +4,8 @@ import '../../auth/models/user_model.dart';
 import '../../auth/models/attendance_model.dart';
 import '../../auth/models/marks_model.dart';
 import '../../auth/models/notification_model.dart';
+import '../../auth/models/leave_model.dart';
+import '../../auth/models/academic_calendar_model.dart';
 import 'mock_teacher_repository.dart';
 
 // --- States ---
@@ -120,6 +122,58 @@ class TeacherNotificationCountLoaded extends TeacherState {
   List<Object?> get props => [count];
 }
 
+// Weekly timetable
+class TeacherWeeklyScheduleLoading extends TeacherState {}
+class TeacherWeeklyScheduleLoaded extends TeacherState {
+  final Map<String, List<ScheduleModel>> week;
+  const TeacherWeeklyScheduleLoaded(this.week);
+  @override
+  List<Object?> get props => [week];
+}
+
+// Academic calendar
+class TeacherCalendarLoading extends TeacherState {}
+class TeacherCalendarLoaded extends TeacherState {
+  final List<AcademicCalendarEvent> events;
+  const TeacherCalendarLoaded(this.events);
+  @override
+  List<Object?> get props => [events];
+}
+
+// Analytics
+class TeacherAnalyticsLoading extends TeacherState {}
+class TeacherAnalyticsLoaded extends TeacherState {
+  final TeacherAnalytics analytics;
+  const TeacherAnalyticsLoaded(this.analytics);
+  @override
+  List<Object?> get props => [analytics];
+}
+
+// Leave
+class TeacherLeaveLoading extends TeacherState {}
+class TeacherLeaveLoaded extends TeacherState {
+  final List<LeaveApplicationModel> applications;
+  final bool justSubmitted;
+  const TeacherLeaveLoaded(this.applications, {this.justSubmitted = false});
+  @override
+  List<Object?> get props => [applications, justSubmitted];
+}
+class TeacherLeaveSubmitting extends TeacherState {}
+class TeacherLeaveError extends TeacherState {
+  final String message;
+  const TeacherLeaveError(this.message);
+  @override
+  List<Object?> get props => [message];
+}
+
+// Late check-in comment
+class TeacherLateCommentSaved extends TeacherState {
+  final String message;
+  const TeacherLateCommentSaved(this.message);
+  @override
+  List<Object?> get props => [message];
+}
+
 // General error
 class TeacherError extends TeacherState {
   final String message;
@@ -181,6 +235,30 @@ class SubmitAttendanceCorrection extends TeacherEvent {
   List<Object?> get props => [attendanceId, reason];
 }
 
+class LoadTeacherWeeklySchedule extends TeacherEvent {}
+class LoadTeacherCalendar extends TeacherEvent {}
+class LoadTeacherAnalytics extends TeacherEvent {}
+class AddLateCheckInComment extends TeacherEvent {
+  final String attendanceId;
+  final String comment;
+  const AddLateCheckInComment(this.attendanceId, this.comment);
+  @override
+  List<Object?> get props => [attendanceId, comment];
+}
+class LoadTeacherLeaveApplications extends TeacherEvent {}
+class SubmitTeacherLeaveApplication extends TeacherEvent {
+  final LeaveApplicationModel application;
+  const SubmitTeacherLeaveApplication(this.application);
+  @override
+  List<Object?> get props => [application];
+}
+class CancelTeacherLeaveApplication extends TeacherEvent {
+  final String leaveId;
+  const CancelTeacherLeaveApplication(this.leaveId);
+  @override
+  List<Object?> get props => [leaveId];
+}
+
 // --- BLoC ---
 class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
   final MockTeacherRepository _repository;
@@ -201,6 +279,13 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
     on<LoadTeacherSchedule>(_onLoadSchedule);
     on<LoadNotificationCount>(_onLoadNotificationCount);
     on<SubmitAttendanceCorrection>(_onSubmitCorrection);
+    on<LoadTeacherWeeklySchedule>(_onLoadWeeklySchedule);
+    on<LoadTeacherCalendar>(_onLoadCalendar);
+    on<LoadTeacherAnalytics>(_onLoadAnalytics);
+    on<AddLateCheckInComment>(_onAddLateComment);
+    on<LoadTeacherLeaveApplications>(_onLoadLeaves);
+    on<SubmitTeacherLeaveApplication>(_onSubmitLeave);
+    on<CancelTeacherLeaveApplication>(_onCancelLeave);
   }
 
   Future<void> _onLoadProfile(
@@ -370,6 +455,111 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
       emit(const TeacherMarksSaved('Correction request submitted.'));
     } catch (e) {
       emit(const TeacherError('Failed to submit correction request.'));
+    }
+  }
+
+  // ────────────────────── WEEKLY TIMETABLE ──────────────────────
+
+  Future<void> _onLoadWeeklySchedule(
+    LoadTeacherWeeklySchedule event,
+    Emitter<TeacherState> emit,
+  ) async {
+    emit(TeacherWeeklyScheduleLoading());
+    try {
+      final week = await _repository.getWeeklySchedule();
+      emit(TeacherWeeklyScheduleLoaded(week));
+    } catch (e) {
+      emit(const TeacherError('Failed to load weekly schedule.'));
+    }
+  }
+
+  // ────────────────────── ACADEMIC CALENDAR ─────────────────────
+
+  Future<void> _onLoadCalendar(
+    LoadTeacherCalendar event,
+    Emitter<TeacherState> emit,
+  ) async {
+    emit(TeacherCalendarLoading());
+    try {
+      final events = await _repository.getAcademicCalendar();
+      emit(TeacherCalendarLoaded(events));
+    } catch (e) {
+      emit(const TeacherError('Failed to load academic calendar.'));
+    }
+  }
+
+  // ─────────────────────────── ANALYTICS ────────────────────────
+
+  Future<void> _onLoadAnalytics(
+    LoadTeacherAnalytics event,
+    Emitter<TeacherState> emit,
+  ) async {
+    emit(TeacherAnalyticsLoading());
+    try {
+      final analytics = await _repository.getTeacherAnalytics();
+      emit(TeacherAnalyticsLoaded(analytics));
+    } catch (e) {
+      emit(const TeacherError('Failed to load analytics.'));
+    }
+  }
+
+  // ──────────────────── LATE CHECK-IN COMMENT ───────────────────
+
+  Future<void> _onAddLateComment(
+    AddLateCheckInComment event,
+    Emitter<TeacherState> emit,
+  ) async {
+    try {
+      await _repository.addLateCheckInComment(
+        event.attendanceId,
+        event.comment,
+      );
+      emit(const TeacherLateCommentSaved('Comment added to late check-in.'));
+    } catch (e) {
+      emit(const TeacherError('Failed to save comment.'));
+    }
+  }
+
+  // ───────────────────────────── LEAVE ──────────────────────────
+
+  Future<void> _onLoadLeaves(
+    LoadTeacherLeaveApplications event,
+    Emitter<TeacherState> emit,
+  ) async {
+    emit(TeacherLeaveLoading());
+    try {
+      final applications = await _repository.getLeaveApplications();
+      emit(TeacherLeaveLoaded(applications));
+    } catch (e) {
+      emit(const TeacherLeaveError('Failed to load leave applications.'));
+    }
+  }
+
+  Future<void> _onSubmitLeave(
+    SubmitTeacherLeaveApplication event,
+    Emitter<TeacherState> emit,
+  ) async {
+    emit(TeacherLeaveSubmitting());
+    try {
+      await _repository.submitLeaveApplication(event.application);
+      final applications = await _repository.getLeaveApplications();
+      emit(TeacherLeaveLoaded(applications, justSubmitted: true));
+    } catch (e) {
+      emit(const TeacherLeaveError('Failed to submit leave application.'));
+    }
+  }
+
+  Future<void> _onCancelLeave(
+    CancelTeacherLeaveApplication event,
+    Emitter<TeacherState> emit,
+  ) async {
+    emit(TeacherLeaveSubmitting());
+    try {
+      await _repository.cancelLeaveApplication(event.leaveId);
+      final applications = await _repository.getLeaveApplications();
+      emit(TeacherLeaveLoaded(applications));
+    } catch (e) {
+      emit(const TeacherLeaveError('Failed to cancel leave application.'));
     }
   }
 }

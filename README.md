@@ -1,166 +1,299 @@
-You are a senior Flutter developer building a School Management System mobile app. The app combines both Parent and Teacher flows in a single Flutter application, starting with a role selection screen. Use **BLoC architecture**, **modular feature-based folder structure**, **Material 3 design**, and **rich animations** (page transitions, hero, shimmer loading, Lottie where suitable). The UI must be **pixel-perfect**, **fully responsive**, and **never overflow** (no RenderFlex overflow errors). Use `go_router` for navigation, `flutter_bloc` for state management, and clean coding practices. API calls can be mocked, but structure the app ready for real endpoints later.
+# School Management System (SMS) — Flutter Mobile App
 
-I have an existing Flutter project. You will generate **all required screens, blocs, models, and routing** for the Parent and Teacher modules. After generating every file, run `flutter analyze` internally, and if any errors exist, provide corrected code. The final deliverable must compile with zero analysis errors, zero overflow warnings, and zero best-practice violations.
+A single Flutter app combining **Parent** and **Teacher** flows, starting from a role
+selection screen. Built with **BLoC architecture**, a **modular feature-based folder
+structure**, **Material 3** design and **rich animations**.
 
-Here are the detailed specifications. Add missing sensible features where noted.
+---
+
+## 0. Current Implementation Status
+
+✅ `flutter analyze` → **No issues found (0 errors, 0 warnings, 0 infos)**
+
+All screens, BLoCs, models, repositories and routing described below are implemented and
+compiling. API calls are mocked with artificial delays so shimmer/skeleton states are
+visible; repositories are structured so they can be swapped for real HTTP clients later.
+
+### Feature coverage
+
+| Area | Status |
+|---|---|
+| Splash + Role selection (Hero cards) | ✅ |
+| Parent login / Teacher login (+ OTP) | ✅ |
+| Teacher: Home, Attendance, Marks, Profile shell | ✅ |
+| Parent: Home, Marks, Notifications, Profile shell | ✅ |
+| **Parent leave applications (multi-type + optional description + attachment)** | ✅ |
+| **Parent dashboard progress charts (attendance + marks trend)** | ✅ |
+| **Parent academic calendar (month grid + events)** | ✅ |
+| **Parent fee payment → school account details → screenshot → pending → verified** | ✅ |
+| **Teacher leave applications → sent to Principal (separate web app) for approval** | ✅ |
+| **Teacher attendance chart + class average chart** | ✅ |
+| **Teacher academic calendar** | ✅ |
+| **Teacher full-week class timetable** | ✅ |
+| **Teacher late check-in comment prompt** | ✅ |
+| **Teacher remarks/comments on student marks** | ✅ |
+| Theme extension for semantic status colours | ✅ |
+
+---
 
 ## 1. App Flow & Role Selection
-- **Launch Screen**: Animated splash with school logo, then navigate to Role Selection.
-- **Role Selection Screen**: Two large cards – “I’m a Parent” and “I’m a Teacher” – with Hero animations. Tapping navigates to the respective login screen.
-- **Parent Login**: Student ID + Password. Forgot password flow (mock). No registration; admin creates accounts.
-- **Teacher Login**: Employee ID + Password. Option for OTP verification (mock). No registration.
 
-## 2. Teacher Module (after login)
-Bottom navigation with 4 tabs: **Home**, **Attendance**, **Marks**, **Profile**.
+- **Launch/Splash**: animated logo (fade + scale), then navigates to Role Selection.
+- **Role Selection**: two large Hero-animated cards — “I’m a Parent”, “I’m a Teacher”.
+- **Parent Login**: Student ID + Password, mock forgot-password flow.
+- **Teacher Login**: Employee ID + Password, with mock OTP verification path.
+
+---
+
+## 2. Teacher Module
+
+Bottom navigation: **Home**, **Attendance**, **Marks**, **Profile**.
 
 ### 2.1 Home Tab
-- Current date/time, greeting.
-- **Check‑in / Check‑out** button (toggles state). When pressed:
-  - Request GPS (use mock location if simulator).
-  - Show geofence status (green if inside school zone, red if outside).
-  - Trigger face verification (mock – show camera preview frame and simulate success/failure).
-  - Animated check mark (Lottie) on success.
-- Today’s schedule: list of classes with time and subject (mock data).
-- Recent attendance history card.
+- Current date/time + greeting.
+- **Check-in / Check-out** toggle with geofence status indicator and animated bouncy button.
+- **Late check-in comment**: when checking in after 08:30 a `Late` pill appears and an
+  optional comment dialog is shown (`AddLateCheckInComment` event) so the record explains
+  the delay.
+- **Attendance chart** — bar chart of presence over the last 6 working days.
+- **Class average chart** — bar chart of average marks per assigned class.
+- Stat cards: *My Attendance %*, *Class Average %*.
+- **Academic calendar preview** with a “View All” link.
+- Quick actions: *Apply Leave*, *Week View*, *Calendar*.
+- Today’s schedule (with a **Full Week** shortcut) and recent attendance history.
 
 ### 2.2 Attendance Tab
-- List of own attendance records (date, check‑in time, check‑out time, status).
-- Filter by date range.
-- Pull-to-refresh, shimmer while loading.
+- Own attendance records (date, check-in, check-out, status), date-range filter,
+  pull-to-refresh and shimmer loading, plus an in-line correction request for absences.
 
 ### 2.3 Marks Tab
-- **Classes List**: grid of assigned classes (fetch from API/mock).
-- Tap a class → **Subjects List** for that class.
-- Tap a subject → **Exam List** (e.g., Mid‑Term, Final).
-- Tap an exam → **Student Marks Entry Screen**:
-  - List of students (profile pic, name, roll no.).
-  - For each student, input fields for **obtained marks** and **total marks** (auto‑calculate percentage, grade).
-  - **Save as Draft** button (saves locally/server with status “Draft”).
-  - Status indicator for each mark entry (Draft / Published).
-  - App bar action to **publish marks** (only if authorized – mock teacher as “teacher” role, cannot publish; superadmin button hidden, but show disabled state).
-- **Import/Export Excel** option (UI only, button triggers share/file picker, mocked).
+- Classes grid → Subjects → Exams → **Student Marks Entry**.
+- Obtained/total inputs with live percentage + grade.
+- **Remarks field per student** — free-text comment saved with the marks
+  (`StudentMarkModel.teacherRemarks`), displayed to parents in the Parent flow.
+- **Save as Draft**; publish action disabled for the teacher role (only admin/superadmin
+  can publish) — shown in a disabled state with an explanatory tooltip.
+- Import/Export (UI only, mocked).
 
 ### 2.4 Profile Tab
-- Teacher details (name, employee ID, photo, department).
-- Logout button with confirmation dialog.
+- Teacher details (name, employee ID, department, contact, publish rights).
+- Quick links: **Weekly Timetable**, **Leave Applications**, **Academic Calendar**.
+- Logout with confirmation dialog.
 
-### Added Missing Features (Teacher)
-- In-app notification bell on app bar (shows count of announcements/absent alerts).
-- Quick attendance correction request (if check‑in failed, raise a request – mock).
-- View students’ overall attendance (for class teacher role).
+### 2.5 Leave (Teacher) — *new*
+- App bar + quick action + profile entry point.
+- Summary stats: Pending / Approved / Days Used.
+- **Apply Leave** bottom sheet: leave type chips, from/to date pickers, computed day
+  count, optional description, optional attachment (mock).
+- Submissions are addressed to the **Principal**, who reviews them in the **separate web
+  application**; on this app they remain **Pending** until reviewed. Approved/rejected
+  entries show the Principal’s remarks.
+- Pending applications can be withdrawn.
 
-## 3. Parent Module (after login)
-Bottom navigation with 4 tabs: **Home**, **Marks**, **Notifications**, **Profile**.
+### 2.6 Weekly Timetable — *new*
+- Tabbed per weekday (Mon–Sat) with the current day highlighted.
+- Each period shows time, subject, class/section, and a **Now** / **Next** badge.
+
+### 2.7 Academic Calendar (Teacher) — *new*
+- Month grid with colour-coded event dots, month navigation, and an event list for the
+  selected day.
+
+---
+
+## 3. Parent Module
+
+Bottom navigation: **Home**, **Marks**, **Alerts**, **Profile**.
 
 ### 3.1 Home Tab
-- **Child Switcher**: If multiple children, horizontal scrollable chips to select. Each child’s data shown below.
-- **Today’s Attendance**: status (Present/Absent/Late) with time stamp, animated icon.
-- **Recent Marks**: mini report card with latest exam total, percentage, grade.
-- **Upcoming Exams** list (subject, date).
-- **Fee Due Alert** (mock: “₹5000 due by 25 June” with pay button – UI only).
+- **Child Switcher** (chips) for multiple children.
+- Quick actions: *Apply Leave*, *Pay Fees*, *Calendar*.
+- **Snapshot stat cards**: Attendance % and Average % (with grade).
+- **Progress Overview card**:
+  - Attendance progress bar (colour-coded against the 75% threshold).
+  - **Marks trend bar chart** across exams.
+- Today’s attendance card, Recent Marks (with grade pills), Upcoming Exams.
+- **Academic calendar preview** (3 upcoming events) with “View All”.
+- **Fee Due Alert**: real outstanding amount, a **Pay Now** button that opens the fee
+  screen, and an inline notice when payments are awaiting verification.
 
 ### 3.2 Marks Tab
-- Per‑child marks overview (switch child at top).
-- **Subject‑wise Marks Table**: exam, subject, obtained, total, percentage, grade.
-- **Report Card Generation**: button to “Download Report Card” (generates PDF – mock share action).
-- **Progress Graph**: line chart of percentage across exams (use `fl_chart` package).
+- Per-child marks overview, subject-wise table, teacher remarks, and `fl_chart` progress
+  graph across exams. Report card download (mocked share action).
 
 ### 3.3 Notifications Tab
-- List of push notifications (absence alerts, result declared, events).
-- Grouped by date, swipe to dismiss, badge on tab icon.
+- Date-grouped notifications, swipe to dismiss, tab badge.
 
 ### 3.4 Profile Tab
-- Child details (name, class, section, RFID card ID, photo).
-- Parent contact info.
-- Change password, logout.
+- Child details (name, class, section, RFID, photo), parent contact info.
+- Quick links: **Leave Applications**, **Fees & Payments**, **Academic Calendar**.
+- Monthly attendance calendar heat map, PTM schedule, change password, logout.
 
-### Added Missing Features (Parent)
-- Attendance calendar view (monthly heat map).
-- Teacher’s remarks display on marks screen.
-- PTM (Parent‑Teacher Meeting) schedule.
+### 3.5 Leave Applications (Parent) — *new*
+- Summary stats (Pending / Approved / Days).
+- **Apply Leave** bottom sheet with many leave types:
+  *Sick, Casual, Emergency, Family Function, Vacation, Medical/Hospital, Sports,
+  Exam Related, Half Day, Late Arrival, Other.*
+- From/To date pickers with validated ranges and auto-corrected end date.
+- **Optional description** (up to 300 chars) and optional supporting-document attachment
+  (mock).
+- Status pills: **Pending / Approved / Rejected / Cancelled**, with the Principal’s
+  remarks shown once reviewed. Pending requests can be cancelled.
+
+### 3.6 Fees & Payments (Parent) — *new*
+- Outstanding total + pending-verification stat cards.
+- Fee cards with amount, balance, due date and Paid/Due/Overdue badges.
+- **Pay Now** opens a two-step payment sheet:
+  1. **School account details** (account name/number, IFSC, bank & branch, UPI) with
+     copy-to-clipboard buttons.
+  2. Amount, optional transaction reference, and a **required screenshot attachment**
+     (mock image picker).
+- On submit the payment is created with status **Pending** and a message explains it will
+  update after verification; the Payment History section shows **Pending → Verified /
+  Rejected** with the office’s verification remarks.
+
+### 3.7 Academic Calendar (Parent) — *new*
+- Same month grid + event list UI as the teacher calendar, with parent-relevant events
+  (exams, PTM, results, holidays, vacations).
+
+---
 
 ## 4. UI/UX & Animation Requirements
-- **Material 3**: Use `ColorScheme` with seed color, dynamic theming.
-- **Responsive**: All screens wrapped in `SafeArea`, use `LayoutBuilder` or `MediaQuery` to avoid overflow. Text overflow handled with ellipsis. `SingleChildScrollView` where content may exceed height.
-- **Animations**:
-  - Page transitions: `go_router` with `CustomTransitionPage` (slide up/fade).
-  - Hero animation on role selection cards → login screen.
-  - Shimmer loading on lists.
-  - Lottie for success/error (check‑in success, attendance marked).
-  - Bouncy check‑in/out button.
-  - Animated list items when marks saved.
-- **States**: Every BLoC must emit `loading`, `loaded`, `error` states; UI handles each with shimmer/skeleton, error widget with retry, empty state.
+
+- **Material 3** `ColorScheme.fromSeed` with light & dark themes.
+- **Theme extension**: `AppStatusColors` (`lib/core/theme/app_status_colors.dart`) provides
+  semantic `success / warning / danger / info / neutral` colours in both brightnesses, so
+  new screens avoid hardcoded literals.
+- **Responsive / overflow-safe**: `SafeArea`, ellipsized text, `Wrap` for chip groups,
+  `Expanded`/`Flexible` for rows, `SingleChildScrollView` where content may exceed height.
+- **Animations**: `go_router` slide+fade page transitions, Hero role cards, shimmer
+  skeletons, animated bouncy buttons, animated bar-chart growth (`TweenAnimationBuilder`).
+- **States**: every BLoC emits loading / loaded / error; the UI renders shimmer, an error
+  widget with retry, and an empty-state widget.
+
+---
 
 ## 5. Technical Architecture
-- **Folder structure**:
+
+### Folder structure
+
+```
 lib/
+├── main.dart
 ├── core/
 │   ├── theme/
-│   ├── routes/
-│   ├── utils/
-│   └── widgets/
-├── features/
-│   ├── auth/
-│   │   ├── bloc/
-│   │   ├── screens/
-│   │   └── models/
-│   ├── role_selection/
-│   ├── teacher/
-│   │   ├── home/
-│   │   ├── attendance/
-│   │   ├── marks/
-│   │   ├── profile/
-│   │   └── bloc/
-│   ├── parent/
-│   │   ├── home/
-│   │   ├── marks/
-│   │   ├── notifications/
-│   │   ├── profile/
-│   │   └── bloc/
-│   └── shared/
-│       └── widgets/
-└── main.dart
+│   │   ├── app_theme.dart
+│   │   └── app_status_colors.dart          # ThemeExtension (semantic colours)
+│   ├── routes/app_router.dart
+│   ├── utils/                              # date_formatter, mock_delay
+│   └── widgets/                            # animated_button, error_widget, shimmer_loading
+└── features/
+    ├── auth/
+    │   ├── bloc/auth_bloc.dart
+    │   ├── models/
+    │   │   ├── user_model.dart
+    │   │   ├── attendance_model.dart
+    │   │   ├── marks_model.dart
+    │   │   ├── notification_model.dart
+    │   │   ├── leave_model.dart            # NEW
+    │   │   ├── fee_model.dart              # NEW
+    │   │   └── academic_calendar_model.dart # NEW
+    │   └── screens/                        # splash, parent_login, teacher_login
+    ├── role_selection/
+    ├── shared/widgets/                     # stat_card, progress_charts, academic_calendar_view
+    ├── parent/
+    │   ├── bloc/                           # parent_bloc, mock_parent_repository
+    │   ├── home/
+    │   ├── marks/
+    │   ├── notifications/
+    │   ├── profile/
+    │   ├── leave/                          # NEW
+    │   ├── fees/                           # NEW
+    │   └── calendar/                       # NEW
+    └── teacher/
+        ├── bloc/                           # teacher_bloc, mock_teacher_repository
+        ├── home/
+        ├── attendance/
+        ├── marks/                          # incl. remarks entry
+        ├── profile/
+        ├── leave/                          # NEW
+        ├── calendar/                       # NEW
+        └── schedule/                       # NEW (weekly timetable)
+```
 
-- Use `equatable` for states/events. Use `freezed` optionally (if you prefer).
-- `go_router` with `StatefulShellRoute.indexedStack` for bottom navigation persistence.
-- Dummy repositories returning mock data with artificial delay (2 seconds) to show shimmer.
-- Packages to use (add to pubspec):
+### Navigation
+
+`go_router` with `StatefulShellRoute.indexedStack` for bottom-nav persistence. New
+sub-routes (`leave`, `fees`, `calendar`, `schedule`) hang off the `home` branch and use
+`parentNavigatorKey: _rootNavigatorKey` so they push full-screen over the shell.
+
+`RouteNames` additions: `parentLeave`, `parentFees`, `parentCalendar`, `teacherLeave`,
+`teacherCalendar`, `teacherWeeklySchedule`.
+
+### Key events (new)
+
+**ParentBloc**: `LoadLeaveApplications`, `SubmitLeaveApplication`,
+`CancelLeaveApplication`, `LoadFees`, `SubmitFeePayment`, `LoadAcademicCalendar`,
+`LoadStudentAnalytics`.
+
+**TeacherBloc**: `LoadTeacherLeaveApplications`, `SubmitTeacherLeaveApplication`,
+`CancelTeacherLeaveApplication`, `LoadTeacherWeeklySchedule`, `LoadTeacherCalendar`,
+`LoadTeacherAnalytics`, `AddLateCheckInComment`.
+
+### Dependencies (`pubspec.yaml`)
+
 ```yaml
-flutter_bloc
-go_router
-equatable
-dio (mock)
-shimmer
-lottie
-fl_chart
-intl
-camera (mock)
-geolocator (mock)
-flutter_local_notifications (mock)
-google_ml_kit (face detection mock)
+flutter_bloc, go_router, equatable, shimmer, lottie, fl_chart, intl,
+dio, geolocator, camera, google_ml_kit, flutter_local_notifications,
+path_provider, share_plus, font_awesome_flutter
+```
 
-No hardcoded colors: Use theme extension.
+> **Deviation from the original spec**: `fl_chart` drives the Marks progress graph, while
+> the new compact dashboard charts use a dependency-free custom `MiniBarChart` widget for
+> consistent styling and zero extra weight.
 
-6. Copilot Analysis Command
-After you output each screen/BLoC file, run an internal simulation of flutter analyze on the entire generated code. If any analysis error, warning, or overflow risk is detected, fix it immediately and provide the corrected version. State “Analysis passed with 0 issues” at the end of each file.
+### Theme colours
 
-7. Deliverables
-Generate the complete code for:
+No hardcoded status colours in new code — read them via
+`AppStatusColors.of(context)` (with a safe `light` fallback if the extension is absent).
 
-main.dart with app initialization, theme, and GoRouter setup.
+---
 
-Role Selection Screen + Splash.
+## 6. Data & Mock Behaviour
 
-Parent Login & Teacher Login screens.
+- Repositories return mock data with artificial delays (`MockDelay.simulate`), making
+  shimmer/skeleton states visible.
+- Leave submissions and fee payments are kept in an in-memory session store, so newly
+  created entries remain visible while the app runs and start in a **Pending** state.
+- School bank account details come from `MockParentRepository.getSchoolAccount()`.
+- `getStudentAnalytics` (parent) and `getTeacherAnalytics` (teacher) derive chart data
+  from the mocked attendance and marks so the dashboards stay consistent.
 
-Teacher Bottom Navigation Shell, Home, Attendance, Marks, Profile screens with BLoCs.
+---
 
-Parent Bottom Navigation Shell, Home, Marks, Notifications, Profile screens with BLoCs.
+## 7. Running the Project
 
-All shared widgets (shimmer list, error widget, animated button, etc.).
+```bash
+flutter pub get
+flutter analyze     # expected: No issues found!
+flutter run
+```
 
-Mock models and repositories.
+**Demo credentials** (any non-empty credentials succeed):
 
-Ensure the code is ready to copy‑paste into my existing project and run on the first try.
+| Role | ID | Password |
+|---|---|---|
+| Parent | `p1` | `parent` |
+| Teacher | `t1` | `teacher` |
 
-Start generating now.
+Teacher OTP flow accepts any 6-digit code.
+
+---
+
+## 8. Notes / Follow-ups
+
+- Camera, geolocation, notifications, ML Kit face detection and file picking are mocked;
+  wire up the real plugins when backend endpoints are available.
+- The **Principal approval** UI lives in the separate web application; this app only
+  submits and displays the resulting status.
+- `dio` is present as a dependency but unused until real endpoints replace the mock
+  repositories.

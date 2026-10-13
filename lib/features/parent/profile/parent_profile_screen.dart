@@ -79,7 +79,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: profile.children.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        separatorBuilder: (_, _) => const SizedBox(width: 8),
                         itemBuilder: (context, index) {
                           final c = profile.children[index];
                           final isSelected = index == state.selectedChildIndex;
@@ -101,6 +101,10 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
 
                   // Child Details Card
                   _buildChildDetails(child, colorScheme),
+                  const SizedBox(height: 16),
+
+                  // Quick links to the new modules
+                  _buildQuickLinks(),
                   const SizedBox(height: 16),
 
                   // Parent Contact Card
@@ -191,6 +195,41 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
           });
           return const ShimmerLoading(itemCount: 6, itemHeight: 72);
         },
+      ),
+    );
+  }
+
+  Widget _buildQuickLinks() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.event_available),
+              title: const Text('Leave Applications'),
+              subtitle: const Text('Apply & track leave requests'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.pushNamed(RouteNames.parentLeave),
+            ),
+            const Divider(height: 1, indent: 56),
+            ListTile(
+              leading: const Icon(Icons.payments_outlined),
+              title: const Text('Fees & Payments'),
+              subtitle: const Text('View dues, pay and track verification'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.pushNamed(RouteNames.parentFees),
+            ),
+            const Divider(height: 1, indent: 56),
+            ListTile(
+              leading: const Icon(Icons.calendar_month),
+              title: const Text('Academic Calendar'),
+              subtitle: const Text('Holidays, exams and events'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.pushNamed(RouteNames.parentCalendar),
+            ),
+          ],
+        ),
       ),
     );
   }
