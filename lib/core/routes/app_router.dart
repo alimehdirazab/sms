@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/role_selection/role_selection_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
-import '../../features/auth/screens/parent_login_screen.dart';
-import '../../features/auth/screens/teacher_login_screen.dart';
+import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/forgot_password_screen.dart';
+import '../../features/auth/screens/reset_password_screen.dart';
 import '../../features/teacher/home/teacher_home_screen.dart';
 import '../../features/teacher/attendance/teacher_attendance_screen.dart';
 import '../../features/teacher/marks/teacher_marks_screen.dart';
@@ -12,24 +12,27 @@ import '../../features/parent/home/parent_home_screen.dart';
 import '../../features/parent/marks/parent_marks_screen.dart';
 import '../../features/parent/notifications/parent_notifications_screen.dart';
 import '../../features/parent/profile/parent_profile_screen.dart';
-import '../../features/parent/leave/parent_leave_screen.dart';
+import '../../features/parent/leave/leaves_management_screen.dart';
 import '../../features/parent/fees/parent_fees_screen.dart';
 import '../../features/parent/calendar/parent_calendar_screen.dart';
-import '../../features/teacher/leave/teacher_leave_screen.dart';
 import '../../features/teacher/calendar/teacher_calendar_screen.dart';
 import '../../features/teacher/schedule/teacher_weekly_schedule_screen.dart';
 
 class RouteNames {
   static const splash = 'splash';
+  static const login = 'login';
   static const roleSelection = 'roleSelection';
   static const parentLogin = 'parentLogin';
   static const teacherLogin = 'teacherLogin';
+  static const forgotPassword = 'forgotPassword';
+  static const resetPassword = 'resetPassword';
   static const teacherShell = 'teacherShell';
   static const teacherHome = 'teacherHome';
   static const teacherAttendance = 'teacherAttendance';
   static const teacherMarks = 'teacherMarks';
   static const teacherProfile = 'teacherProfile';
   static const teacherLeave = 'teacherLeave';
+  static const teacherApiLeaves = 'teacherApiLeaves';
   static const teacherCalendar = 'teacherCalendar';
   static const teacherWeeklySchedule = 'teacherWeeklySchedule';
   static const parentShell = 'parentShell';
@@ -38,6 +41,7 @@ class RouteNames {
   static const parentNotifications = 'parentNotifications';
   static const parentProfile = 'parentProfile';
   static const parentLeave = 'parentLeave';
+  static const parentApiLeaves = 'parentApiLeaves';
   static const parentFees = 'parentFees';
   static const parentCalendar = 'parentCalendar';
 }
@@ -55,10 +59,18 @@ final appRouter = GoRouter(
           _buildPageWithTransition(child: const SplashScreen(), state: state),
     ),
     GoRoute(
+      path: '/login',
+      name: RouteNames.login,
+      pageBuilder: (context, state) => _buildPageWithTransition(
+        child: const LoginScreen(),
+        state: state,
+      ),
+    ),
+    GoRoute(
       path: '/role-selection',
       name: RouteNames.roleSelection,
       pageBuilder: (context, state) => _buildPageWithTransition(
-        child: const RoleSelectionScreen(),
+        child: const LoginScreen(),
         state: state,
       ),
     ),
@@ -66,7 +78,7 @@ final appRouter = GoRouter(
       path: '/parent-login',
       name: RouteNames.parentLogin,
       pageBuilder: (context, state) => _buildPageWithTransition(
-        child: const ParentLoginScreen(),
+        child: const LoginScreen(),
         state: state,
       ),
     ),
@@ -74,7 +86,25 @@ final appRouter = GoRouter(
       path: '/teacher-login',
       name: RouteNames.teacherLogin,
       pageBuilder: (context, state) => _buildPageWithTransition(
-        child: const TeacherLoginScreen(),
+        child: const LoginScreen(),
+        state: state,
+      ),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      name: RouteNames.forgotPassword,
+      pageBuilder: (context, state) => _buildPageWithTransition(
+        child: const ForgotPasswordScreen(),
+        state: state,
+      ),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      name: RouteNames.resetPassword,
+      pageBuilder: (context, state) => _buildPageWithTransition(
+        child: ResetPasswordScreen(
+          initialToken: state.uri.queryParameters['token'],
+        ),
         state: state,
       ),
     ),
@@ -96,7 +126,16 @@ final appRouter = GoRouter(
                   name: RouteNames.teacherLeave,
                   parentNavigatorKey: _rootNavigatorKey,
                   pageBuilder: (context, state) => _buildPageWithTransition(
-                    child: const TeacherLeaveScreen(),
+                    child: const LeavesManagementScreen(isTeacher: true),
+                    state: state,
+                  ),
+                ),
+                GoRoute(
+                  path: 'api-leaves',
+                  name: RouteNames.teacherApiLeaves,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const LeavesManagementScreen(isTeacher: true),
                     state: state,
                   ),
                 ),
@@ -172,7 +211,16 @@ final appRouter = GoRouter(
                   name: RouteNames.parentLeave,
                   parentNavigatorKey: _rootNavigatorKey,
                   pageBuilder: (context, state) => _buildPageWithTransition(
-                    child: const ParentLeaveScreen(),
+                    child: const LeavesManagementScreen(isTeacher: false),
+                    state: state,
+                  ),
+                ),
+                GoRoute(
+                  path: 'api-leaves',
+                  name: RouteNames.parentApiLeaves,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const LeavesManagementScreen(isTeacher: false),
                     state: state,
                   ),
                 ),

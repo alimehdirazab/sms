@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../bloc/teacher_bloc.dart';
+import '../attendance/services/location_and_selfie_service.dart';
 import '../../../core/routes/app_router.dart';
 import '../../../core/theme/app_status_colors.dart';
 import '../../../core/utils/date_formatter.dart';
@@ -433,6 +435,100 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     );
   }
 
+  Future<void> _handleCheckInFlow() async {
+    final locationService = LocationAndSelfieService();
+
+    // Show dialog explaining GPS and Selfie requirements
+    final proceed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.camera_alt, color: Color(0xFFFF6F00)),
+            SizedBox(width: 8),
+            Text('Check-in Verification'),
+          ],
+        ),
+        content: const Text(
+          'To check in, the app will verify your real-time GPS location and require a selfie photo as proof of attendance.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            icon: const Icon(Icons.camera_front),
+            label: const Text('Take Selfie & Check In'),
+            onPressed: () => Navigator.pop(ctx, true),
+          ),
+        ],
+      ),
+    );
+
+    if (proceed != true) return;
+
+    try {
+      // 1. Capture selfie
+      final File? selfieFile = await locationService.captureSelfie();
+      if (selfieFile == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Selfie is mandatory for attendance check-in.')),
+          );
+        }
+        return;
+      }
+
+      // 2. Fetch real GPS coordinates
+      final loc = await locationService.getCurrentRealLocation();
+
+      if (!mounted) return;
+
+      context.read<TeacherBloc>().add(
+            PerformCheckIn(
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              accuracy: loc.accuracy,
+              selfieFile: selfieFile,
+            ),
+          );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleCheckOutFlow() async {
+    final locationService = LocationAndSelfieService();
+    try {
+      final loc = await locationService.getCurrentRealLocation();
+      if (!mounted) return;
+      context.read<TeacherBloc>().add(
+            PerformCheckOut(
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              accuracy: loc.accuracy,
+            ),
+          );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildCheckInOutSection(ColorScheme colorScheme) {
     final status = AppStatusColors.of(context);
     return BlocConsumer<TeacherBloc, TeacherState>(
@@ -533,12 +629,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   onPressed: isLoading
                       ? null
                       : () {
-                          final bloc = context.read<TeacherBloc>();
                           if (_isCheckedIn) {
-                            bloc.add(PerformCheckOut());
+                            _handleCheckOutFlow();
                           } else {
                             _pendingLateComment = isLateNow;
-                            bloc.add(PerformCheckIn());
+                            _handleCheckInFlow();
                           }
                         },
                   backgroundColor:

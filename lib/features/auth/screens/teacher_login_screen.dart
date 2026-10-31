@@ -99,26 +99,39 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Login with your Employee ID',
+                    'Login with your Email or Employee ID',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
                   TextFormField(
                     controller: _employeeIdController,
                     decoration: const InputDecoration(
-                      labelText: 'Employee ID',
+                      labelText: 'Email or Employee ID',
                       prefixIcon: Icon(Icons.badge_outlined),
-                      hintText: 'Enter employee ID',
+                      hintText: 'e.g. principal@school.com',
                     ),
                     textInputAction: TextInputAction.next,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Please enter employee ID';
+                        return 'Please enter your email or employee ID';
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ActionChip(
+                        label: const Text('Demo: principal@school.com', style: TextStyle(fontSize: 12)),
+                        onPressed: () {
+                          _employeeIdController.text = 'principal@school.com';
+                          _passwordController.text = 'password123';
+                        },
+                      ),
+                    ],
                   ),
                   if (!_useOtp) ...[
                     const SizedBox(height: 16),
@@ -243,9 +256,10 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
   void _handleLogin() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
-            TeacherLoginRequested(
-              employeeId: _employeeIdController.text.trim(),
+            LoginRequested(
+              email: _employeeIdController.text.trim(),
               password: _passwordController.text.trim(),
+              roleHint: 'teacher',
             ),
           );
     }

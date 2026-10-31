@@ -40,13 +40,6 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
               backgroundColor: colorScheme.error,
             ),
           );
-        } else if (state is OtpSent) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: colorScheme.primary,
-            ),
-          );
         }
       },
       child: Scaffold(
@@ -93,28 +86,41 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Login with your Student ID',
+                    'Login with your Email or Student ID',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
                   TextFormField(
                     controller: _studentIdController,
                     decoration: const InputDecoration(
-                      labelText: 'Student ID',
-                      prefixIcon: Icon(Icons.badge_outlined),
-                      hintText: 'Enter student ID',
+                      labelText: 'Email or Student ID',
+                      prefixIcon: Icon(Icons.person_outline),
+                      hintText: 'e.g. parent@school.com',
                     ),
                     textInputAction: TextInputAction.next,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Please enter student ID';
+                        return 'Please enter your email or student ID';
                       }
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ActionChip(
+                        label: const Text('Demo: parent@school.com', style: TextStyle(fontSize: 12)),
+                        onPressed: () {
+                          _studentIdController.text = 'parent@school.com';
+                          _passwordController.text = 'password123';
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _passwordController,
                     decoration: InputDecoration(
@@ -149,18 +155,7 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        final studentId = _studentIdController.text.trim();
-                        if (studentId.isNotEmpty) {
-                          context.read<AuthBloc>().add(
-                                ForgotPasswordRequested(studentId: studentId),
-                              );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Please enter your Student ID first.'),
-                            ),
-                          );
-                        }
+                        context.pushNamed(RouteNames.forgotPassword);
                       },
                       child: const Text('Forgot Password?'),
                     ),
@@ -203,9 +198,10 @@ class _ParentLoginScreenState extends State<ParentLoginScreen> {
   void _handleLogin() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
-            ParentLoginRequested(
-              studentId: _studentIdController.text.trim(),
+            LoginRequested(
+              email: _studentIdController.text.trim(),
               password: _passwordController.text.trim(),
+              roleHint: 'parent',
             ),
           );
     }

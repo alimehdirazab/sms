@@ -244,7 +244,7 @@ class TeacherProfileScreen extends StatelessWidget {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              context.goNamed(RouteNames.roleSelection);
+              context.goNamed(RouteNames.login);
             },
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red,

@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/utils/mock_delay.dart';
+import '../models/auth_response_model.dart';
+import '../repositories/auth_repository.dart';
 
 // --- States ---
 abstract class AuthState extends Equatable {
@@ -19,24 +20,41 @@ class AuthLoading extends AuthState {
 }
 
 class AuthSuccess extends AuthState {
-  final String userId;
-  final String role; // 'parent' or 'teacher'
-  final String name;
+  final UserModel user;
 
-  const AuthSuccess({
-    required this.userId,
-    required this.role,
-    required this.name,
-  });
+  const AuthSuccess({required this.user});
+
+  String get userId => user.id;
+  String get role => user.role;
+  String get name => user.name;
+  String? get activeStudentId => user.activeStudentId;
 
   @override
-  List<Object?> get props => [userId, role, name];
+  List<Object?> get props => [user];
 }
 
 class AuthError extends AuthState {
   final String message;
 
   const AuthError({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class ForgotPasswordSent extends AuthState {
+  final String message;
+
+  const ForgotPasswordSent({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class ResetPasswordSuccess extends AuthState {
+  final String message;
+
+  const ResetPasswordSuccess({required this.message});
 
   @override
   List<Object?> get props => [message];
@@ -51,6 +69,10 @@ class OtpSent extends AuthState {
   List<Object?> get props => [message];
 }
 
+class AuthUnauthenticated extends AuthState {
+  const AuthUnauthenticated();
+}
+
 // --- Events ---
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
@@ -59,6 +81,52 @@ abstract class AuthEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+class CheckAuthSessionEvent extends AuthEvent {
+  const CheckAuthSessionEvent();
+}
+
+class LoginRequested extends AuthEvent {
+  final String email;
+  final String password;
+  final String roleHint; // 'teacher' or 'parent'
+
+  const LoginRequested({
+    required this.email,
+    required this.password,
+    this.roleHint = '',
+  });
+
+  @override
+  List<Object?> get props => [email, password, roleHint];
+}
+
+class ForgotPasswordRequested extends AuthEvent {
+  final String email;
+
+  const ForgotPasswordRequested({required this.email});
+
+  @override
+  List<Object?> get props => [email];
+}
+
+class ResetPasswordRequested extends AuthEvent {
+  final String token;
+  final String password;
+
+  const ResetPasswordRequested({
+    required this.token,
+    required this.password,
+  });
+
+  @override
+  List<Object?> get props => [token, password];
+}
+
+class LogoutRequested extends AuthEvent {
+  const LogoutRequested();
+}
+
+// Backward compatibility events for existing UI components
 class ParentLoginRequested extends AuthEvent {
   final String studentId;
   final String password;
@@ -107,70 +175,113 @@ class TeacherOtpVerified extends AuthEvent {
   List<Object?> get props => [employeeId, otp];
 }
 
-class ForgotPasswordRequested extends AuthEvent {
-  final String studentId;
-
-  const ForgotPasswordRequested({required this.studentId});
-
-  @override
-  List<Object?> get props => [studentId];
-}
-
-// --- BLoC ---
+// --- BLoC Implementation ---
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc() : super(const AuthInitial()) {
-    on<ParentLoginRequested>(_onParentLogin);
-    on<TeacherLoginRequested>(_onTeacherLogin);
-    on<TeacherOtpRequested>(_onTeacherOtp);
+  final AuthRepository? authRepository;
+
+  AuthBloc({this.authRepository}) : super(const AuthInitial()) {
+    on<CheckAuthSessionEvent>(_onCheckAuthSession);
+    on<LoginRequested>(_onLoginRequested);
+    on<ParentLoginRequested>(_onParentLoginLegacy);
+    on<TeacherLoginRequested>(_onTeacherLoginLegacy);
+    on<TeacherOtpRequested>(_onTeacherOtpRequested);
     on<TeacherOtpVerified>(_onTeacherOtpVerified);
-    on<ForgotPasswordRequested>(_onForgotPassword);
+    on<ForgotPasswordRequested>(_onForgotPasswordRequested);
+    on<ResetPasswordRequested>(_onResetPasswordRequested);
+    on<LogoutRequested>(_onLogoutRequested);
   }
 
-  Future<void> _onParentLogin(
+  Future<void> _onCheckAuthSession(
+    CheckAuthSessionEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (authRepository == null) return;
+    try {
+      final user = await authRepository!.getCachedUser();
+      if (user != null) {
+        emit(AuthSuccess(user: user));
+      } else {
+        emit(const AuthUnauthenticated());
+      }
+    } catch (_) {
+      emit(const AuthUnauthenticated());
+    }
+  }
+
+  Future<void> _onLoginRequested(
+    LoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      if (authRepository != null) {
+        final result = await authRepository!.login(
+          email: event.email,
+          password: event.password,
+        );
+
+        final user = result.user ??
+            UserModel(
+              id: 'user_1',
+              email: event.email,
+              firstName: event.email.split('@').first,
+              role: event.roleHint.isNotEmpty ? event.roleHint : 'parent',
+            );
+
+        emit(AuthSuccess(user: user));
+      } else {
+        // Fallback mock if repo not provided
+        emit(AuthSuccess(
+          user: UserModel(
+            id: 'mock_1',
+            email: event.email,
+            firstName: 'Demo User',
+            role: event.roleHint.isNotEmpty ? event.roleHint : 'parent',
+          ),
+        ));
+      }
+    } catch (e) {
+      emit(AuthError(message: e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  Future<void> _onParentLoginLegacy(
     ParentLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(const AuthLoading());
-    await MockDelay.simulate();
-
-    // Mock validation: any non-empty credentials work
-    if (event.studentId.isNotEmpty && event.password.isNotEmpty) {
-      emit(const AuthSuccess(
-        userId: 'p1',
-        role: 'parent',
-        name: 'Amit Sharma',
-      ));
-    } else {
-      emit(const AuthError(message: 'Invalid Student ID or Password.'));
-    }
+    final email = event.studentId.contains('@')
+        ? event.studentId
+        : '${event.studentId.toLowerCase().replaceAll(' ', '')}@school.com';
+    add(LoginRequested(
+      email: email,
+      password: event.password,
+      roleHint: 'parent',
+    ));
   }
 
-  Future<void> _onTeacherLogin(
+  Future<void> _onTeacherLoginLegacy(
     TeacherLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(const AuthLoading());
-    await MockDelay.simulate();
-
-    if (event.employeeId.isNotEmpty && event.password.isNotEmpty) {
-      emit(const AuthSuccess(
-        userId: 't1',
-        role: 'teacher',
-        name: 'Rajesh Kumar',
-      ));
-    } else {
-      emit(const AuthError(message: 'Invalid Employee ID or Password.'));
-    }
+    final email = event.employeeId.contains('@')
+        ? event.employeeId
+        : '${event.employeeId.toLowerCase().replaceAll(' ', '')}@school.com';
+    add(LoginRequested(
+      email: email,
+      password: event.password,
+      roleHint: 'teacher',
+    ));
   }
 
-  Future<void> _onTeacherOtp(
+  Future<void> _onTeacherOtpRequested(
     TeacherOtpRequested event,
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    await MockDelay.simulate(milliseconds: 1200);
-
-    emit(const OtpSent(message: 'OTP sent to registered mobile number.'));
+    await Future.delayed(const Duration(milliseconds: 600));
+    emit(const OtpSent(
+      message: 'OTP sent to registered mobile number (Demo: 123456)',
+    ));
   }
 
   Future<void> _onTeacherOtpVerified(
@@ -178,28 +289,74 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    await MockDelay.simulate();
-
-    if (event.otp.length == 6) {
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (event.otp == '123456' || event.otp.length == 6) {
+      final email = event.employeeId.contains('@')
+          ? event.employeeId
+          : '${event.employeeId.toLowerCase()}@school.com';
       emit(AuthSuccess(
-        userId: 't_${event.employeeId}',
-        role: 'teacher',
-        name: 'Rajesh Kumar',
+        user: UserModel(
+          id: event.employeeId,
+          email: email,
+          firstName: 'Teacher ${event.employeeId}',
+          role: 'teacher',
+        ),
       ));
     } else {
-      emit(const AuthError(message: 'Invalid OTP. Please try again.'));
+      emit(const AuthError(message: 'Invalid OTP entered. Please try again.'));
     }
   }
 
-  Future<void> _onForgotPassword(
+  Future<void> _onForgotPasswordRequested(
     ForgotPasswordRequested event,
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
-    await MockDelay.simulate(milliseconds: 1500);
+    try {
+      if (authRepository != null) {
+        final msg = await authRepository!.forgotPassword(email: event.email);
+        emit(ForgotPasswordSent(message: msg));
+      } else {
+        emit(const ForgotPasswordSent(
+          message: 'Reset instructions sent to your email.',
+        ));
+      }
+    } catch (e) {
+      emit(AuthError(message: e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
 
-    emit(const OtpSent(
-      message: 'Password reset link has been sent to your registered contact.',
-    ));
+  Future<void> _onResetPasswordRequested(
+    ResetPasswordRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      if (authRepository != null) {
+        final msg = await authRepository!.resetPassword(
+          token: event.token,
+          newPassword: event.password,
+        );
+        emit(ResetPasswordSuccess(message: msg));
+      } else {
+        emit(const ResetPasswordSuccess(
+          message: 'Password reset successfully.',
+        ));
+      }
+    } catch (e) {
+      emit(AuthError(message: e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  Future<void> _onLogoutRequested(
+    LogoutRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    try {
+      await authRepository?.logout();
+    } finally {
+      emit(const AuthUnauthenticated());
+    }
   }
 }

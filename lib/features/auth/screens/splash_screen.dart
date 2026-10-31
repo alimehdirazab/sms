@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateAfterDelay() async {
     await Future.delayed(const Duration(milliseconds: 2500));
     if (mounted) {
-      context.goNamed(RouteNames.roleSelection);
+      context.goNamed(RouteNames.login);
     }
   }
 

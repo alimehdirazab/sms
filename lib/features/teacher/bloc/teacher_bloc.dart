@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../auth/models/user_model.dart';
@@ -6,6 +7,7 @@ import '../../auth/models/marks_model.dart';
 import '../../auth/models/notification_model.dart';
 import '../../auth/models/leave_model.dart';
 import '../../auth/models/academic_calendar_model.dart';
+import '../attendance/repositories/teacher_attendance_repository.dart';
 import 'mock_teacher_repository.dart';
 
 // --- States ---
@@ -223,8 +225,38 @@ class PublishMarks extends TeacherEvent {
   @override
   List<Object?> get props => [examId];
 }
-class PerformCheckIn extends TeacherEvent {}
-class PerformCheckOut extends TeacherEvent {}
+class PerformCheckIn extends TeacherEvent {
+  final double latitude;
+  final double longitude;
+  final double accuracy;
+  final File? selfieFile;
+
+  const PerformCheckIn({
+    required this.latitude,
+    required this.longitude,
+    required this.accuracy,
+    this.selfieFile,
+  });
+
+  @override
+  List<Object?> get props => [latitude, longitude, accuracy, selfieFile?.path];
+}
+
+class PerformCheckOut extends TeacherEvent {
+  final double latitude;
+  final double longitude;
+  final double accuracy;
+
+  const PerformCheckOut({
+    required this.latitude,
+    required this.longitude,
+    required this.accuracy,
+  });
+
+  @override
+  List<Object?> get props => [latitude, longitude, accuracy];
+}
+
 class LoadTeacherSchedule extends TeacherEvent {}
 class LoadNotificationCount extends TeacherEvent {}
 class SubmitAttendanceCorrection extends TeacherEvent {
@@ -262,9 +294,13 @@ class CancelTeacherLeaveApplication extends TeacherEvent {
 // --- BLoC ---
 class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
   final MockTeacherRepository _repository;
+  final TeacherAttendanceRepository? _attendanceRepository;
 
-  TeacherBloc({MockTeacherRepository? repository})
-      : _repository = repository ?? MockTeacherRepository(),
+  TeacherBloc({
+    MockTeacherRepository? repository,
+    TeacherAttendanceRepository? attendanceRepository,
+  })  : _repository = repository ?? MockTeacherRepository(),
+        _attendanceRepository = attendanceRepository,
         super(TeacherInitial()) {
     on<LoadTeacherProfile>(_onLoadProfile);
     on<LoadTeacherAttendance>(_onLoadAttendance);
@@ -398,11 +434,19 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
   ) async {
     emit(TeacherCheckInLoading());
     try {
-      // Mock GPS + face verification
-      await Future.delayed(const Duration(milliseconds: 2000));
+      if (_attendanceRepository != null) {
+        await _attendanceRepository.checkIn(
+          latitude: event.latitude,
+          longitude: event.longitude,
+          accuracy: event.accuracy,
+          selfieImage: event.selfieFile,
+        );
+      } else {
+        await Future.delayed(const Duration(milliseconds: 1500));
+      }
       emit(const TeacherCheckInSuccess(true));
     } catch (e) {
-      emit(TeacherCheckInError(e.toString()));
+      emit(TeacherCheckInError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
 
@@ -412,10 +456,18 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
   ) async {
     emit(TeacherCheckInLoading());
     try {
-      await Future.delayed(const Duration(milliseconds: 1500));
+      if (_attendanceRepository != null) {
+        await _attendanceRepository.checkOut(
+          latitude: event.latitude,
+          longitude: event.longitude,
+          accuracy: event.accuracy,
+        );
+      } else {
+        await Future.delayed(const Duration(milliseconds: 1500));
+      }
       emit(const TeacherCheckInSuccess(false));
     } catch (e) {
-      emit(TeacherCheckInError(e.toString()));
+      emit(TeacherCheckInError(e.toString().replaceFirst('Exception: ', '')));
     }
   }
 

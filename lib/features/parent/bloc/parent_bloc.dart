@@ -8,6 +8,7 @@ import '../../auth/models/leave_model.dart';
 import '../../auth/models/fee_model.dart';
 import '../../auth/models/academic_calendar_model.dart';
 import 'mock_parent_repository.dart';
+import '../repositories/student_switch_repository.dart';
 
 // --- States ---
 abstract class ParentState extends Equatable {
@@ -246,9 +247,12 @@ class LoadStudentAnalytics extends ParentEvent {
 // --- BLoC ---
 class ParentBloc extends Bloc<ParentEvent, ParentState> {
   final MockParentRepository _repository;
+  final StudentSwitchRepository? studentSwitchRepository;
 
-  ParentBloc({MockParentRepository? repository})
-      : _repository = repository ?? MockParentRepository(),
+  ParentBloc({
+    MockParentRepository? repository,
+    this.studentSwitchRepository,
+  })  : _repository = repository ?? MockParentRepository(),
         super(ParentInitial()) {
     on<LoadParentProfile>(_onLoadProfile);
     on<SelectChild>(_onSelectChild);
@@ -273,18 +277,70 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
   ) async {
     emit(ParentProfileLoading());
     try {
-      final profile = await _repository.getParentProfile();
+      ParentModel profile = await _repository.getParentProfile();
+
+      // Check if logged in user profile is in storage with real students
+      if (studentSwitchRepository != null) {
+        final cachedUser = await studentSwitchRepository!.storageService.getUserProfile();
+        if (cachedUser != null) {
+          final parentStudentsJson = cachedUser['students'];
+          if (parentStudentsJson is List && parentStudentsJson.isNotEmpty) {
+            final students = parentStudentsJson
+                .whereType<Map<String, dynamic>>()
+                .map((e) => StudentModel(
+                      id: e['studentId']?.toString() ?? '',
+                      name: '${e['firstName'] ?? ''} ${e['lastName'] ?? ''}'.trim(),
+                      rollNumber: '${e['className'] ?? ''}-${e['sectionName'] ?? ''}',
+                      className: e['className']?.toString() ?? '',
+                      section: e['sectionName']?.toString() ?? '',
+                    ))
+                .toList();
+
+            final activeId = await studentSwitchRepository!.getCurrentActiveStudentId() ??
+                cachedUser['activeStudentId']?.toString();
+            int selectedIdx = 0;
+            if (activeId != null && activeId.isNotEmpty) {
+              final foundIdx = students.indexWhere((s) => s.id == activeId);
+              if (foundIdx != -1) selectedIdx = foundIdx;
+            }
+
+            final parentName = '${cachedUser['firstName'] ?? ''} ${cachedUser['lastName'] ?? ''}'.trim();
+
+            profile = ParentModel(
+              id: cachedUser['id']?.toString() ?? profile.id,
+              name: parentName.isNotEmpty ? parentName : profile.name,
+              children: students,
+              phoneNumber: cachedUser['phone']?.toString(),
+              email: cachedUser['email']?.toString(),
+            );
+
+            emit(ParentProfileLoaded(profile, selectedChildIndex: selectedIdx));
+            return;
+          }
+        }
+      }
+
       emit(ParentProfileLoaded(profile));
     } catch (e) {
       emit(ParentProfileError(e.toString()));
     }
   }
 
-  void _onSelectChild(SelectChild event, Emitter<ParentState> emit) {
+  Future<void> _onSelectChild(SelectChild event, Emitter<ParentState> emit) async {
     final current = state;
     if (current is ParentProfileLoaded) {
       emit(ParentProfileLoaded(current.profile,
           selectedChildIndex: event.index));
+
+      if (studentSwitchRepository != null &&
+          event.index < current.profile.children.length) {
+        final child = current.profile.children[event.index];
+        try {
+          await studentSwitchRepository!.switchActiveStudent(child.id);
+        } catch (_) {
+          // Keep local selection intact even if network fails
+        }
+      }
     }
   }
 

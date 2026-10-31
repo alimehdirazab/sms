@@ -97,7 +97,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    if (profile.children.length > 1) ...[
+                    if (profile.children.isNotEmpty) ...[
                       _buildChildSwitcher(state),
                       const SizedBox(height: 16),
                     ],
@@ -154,8 +154,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final child = state.profile.children[index];
+          final classDisplay = child.className.isNotEmpty ? ' (${child.className})' : '';
           return ChoiceChip(
-            label: Text(child.name),
+            label: Text('${child.name}$classDisplay'),
             selected: index == state.selectedChildIndex,
             onSelected: (_) {
               context.read<ParentBloc>().add(SelectChild(index));
