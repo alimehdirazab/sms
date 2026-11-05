@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "829909578885",
+    "project_id": "school-erp-noti",
+    "storage_bucket": "school-erp-noti.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:829909578885:android:e718edfb2c52152d44a5ec",
+        "android_client_info": {
+          "package_name": "com.nanomindsolutions.sms"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3YOJ7uIrt1QrP346-MgJ18JdpcePn6C8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -89,15 +89,17 @@ class LoginRequested extends AuthEvent {
   final String email;
   final String password;
   final String roleHint; // 'teacher' or 'parent'
+  final String? fcmToken;
 
   const LoginRequested({
     required this.email,
     required this.password,
     this.roleHint = '',
+    this.fcmToken,
   });
 
   @override
-  List<Object?> get props => [email, password, roleHint];
+  List<Object?> get props => [email, password, roleHint, fcmToken];
 }
 
 class ForgotPasswordRequested extends AuthEvent {
@@ -123,7 +125,12 @@ class ResetPasswordRequested extends AuthEvent {
 }
 
 class LogoutRequested extends AuthEvent {
-  const LogoutRequested();
+  final String? fcmToken;
+
+  const LogoutRequested({this.fcmToken});
+
+  @override
+  List<Object?> get props => [fcmToken];
 }
 
 // Backward compatibility events for existing UI components
@@ -218,6 +225,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final result = await authRepository!.login(
           email: event.email,
           password: event.password,
+          fcmToken: event.fcmToken,
         );
 
         final user = result.user ??
@@ -354,7 +362,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
     try {
-      await authRepository?.logout();
+      await authRepository?.logout(fcmToken: event.fcmToken);
     } finally {
       emit(const AuthUnauthenticated());
     }

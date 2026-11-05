@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/routes/app_router.dart';
+import '../bloc/auth_bloc.dart';
+import '../repositories/auth_repository.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,12 +38,45 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
     _controller.forward();
-    _navigateAfterDelay();
+    _checkSessionAndNavigate();
   }
 
-  Future<void> _navigateAfterDelay() async {
-    await Future.delayed(const Duration(milliseconds: 2500));
-    if (mounted) {
+  Future<void> _checkSessionAndNavigate() async {
+    final minDelay = Future.delayed(const Duration(milliseconds: 1800));
+    final authBloc = context.read<AuthBloc>();
+    final authRepo = context.read<AuthRepository>();
+
+    AuthState authState = authBloc.state;
+    if (authState is AuthInitial || authState is AuthLoading) {
+      try {
+        authState = await authBloc.stream
+            .firstWhere((s) => s is! AuthInitial && s is! AuthLoading)
+            .timeout(const Duration(milliseconds: 2500));
+      } catch (_) {
+        try {
+          final cachedUser = await authRepo.getCachedUser();
+          if (cachedUser != null) {
+            authState = AuthSuccess(user: cachedUser);
+          } else {
+            authState = const AuthUnauthenticated();
+          }
+        } catch (_) {
+          authState = const AuthUnauthenticated();
+        }
+      }
+    }
+
+    await minDelay;
+    if (!mounted) return;
+
+    if (authState is AuthSuccess) {
+      final role = authState.role.toUpperCase();
+      if (role == 'TEACHER') {
+        context.goNamed(RouteNames.teacherHome);
+      } else {
+        context.goNamed(RouteNames.parentHome);
+      }
+    } else {
       context.goNamed(RouteNames.login);
     }
   }

@@ -99,7 +99,11 @@ class LeaveRepository {
       if (startDate != null && startDate.isNotEmpty) queryParams['startDate'] = startDate;
       if (endDate != null && endDate.isNotEmpty) queryParams['endDate'] = endDate;
       if (search != null && search.isNotEmpty) queryParams['search'] = search;
-      if (applicantType != null && applicantType.isNotEmpty) queryParams['applicantType'] = applicantType;
+      if (applicantType != null && applicantType.isNotEmpty) {
+        final typeVal = applicantType == 'STUDENT' ? 'STUDEN' : applicantType;
+        queryParams['aplicantType'] = typeVal;
+        queryParams['applicantType'] = typeVal;
+      }
       if (studentId != null && studentId.isNotEmpty) queryParams['studentId'] = studentId;
 
       final response = await apiClient.dio.get(

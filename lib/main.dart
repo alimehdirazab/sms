@@ -4,6 +4,7 @@ import 'core/theme/app_theme.dart';
 import 'core/routes/app_router.dart';
 import 'core/network/api_client.dart';
 import 'core/storage/session_storage_service.dart';
+import 'core/notifications/fcm_service.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/repositories/auth_repository.dart';
 import 'features/teacher/bloc/teacher_bloc.dart';
@@ -18,6 +19,8 @@ void main() async {
 
   final sessionStorage = SessionStorageService();
   await sessionStorage.init();
+
+  await FcmService.initialize(storageService: sessionStorage);
 
   final apiClient = ApiClient(
     storageService: sessionStorage,

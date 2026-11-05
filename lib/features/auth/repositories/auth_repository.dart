@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
+import '../../../core/notifications/fcm_service.dart';
 import '../../../core/storage/session_storage_service.dart';
 import '../models/auth_response_model.dart';
 
@@ -17,14 +18,21 @@ class AuthRepository {
   Future<AuthResponseModel> login({
     required String email,
     required String password,
+    String? fcmToken,
   }) async {
     try {
+      final token = fcmToken ?? await FcmService.getToken(storageService: storageService);
+      final body = <String, dynamic>{
+        'email': email.trim(),
+        'password': password,
+      };
+      if (token != null && token.isNotEmpty) {
+        body['fcmToken'] = token;
+      }
+
       final response = await apiClient.dio.post(
         ApiConstants.login,
-        data: {
-          'email': email.trim(),
-          'password': password,
-        },
+        data: body,
       );
 
       final authModel = AuthResponseModel.fromJson(response.data);
@@ -133,9 +141,17 @@ class AuthRepository {
   }
 
   /// 5. POST /auth/logout
-  Future<void> logout() async {
+  Future<void> logout({String? fcmToken}) async {
     try {
-      await apiClient.dio.post(ApiConstants.logout);
+      final token = fcmToken ?? await FcmService.getToken(storageService: storageService);
+      final body = <String, dynamic>{};
+      if (token != null && token.isNotEmpty) {
+        body['fcmToken'] = token;
+      }
+      await apiClient.dio.post(
+        ApiConstants.logout,
+        data: body.isNotEmpty ? body : null,
+      );
     } catch (_) {
       // Ignore network errors on logout to guarantee client-side cleanup
     } finally {

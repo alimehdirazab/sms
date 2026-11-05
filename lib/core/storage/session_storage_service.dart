@@ -9,6 +9,7 @@ class SessionStorageService {
   static const String _keyUserRole = 'sms_user_role';
   static const String _keyUserProfile = 'sms_user_profile';
   static const String _keyCustomBaseUrl = 'sms_custom_base_url';
+  static const String _keyFcmToken = 'sms_fcm_token';
 
   final FlutterSecureStorage _secureStorage;
   SharedPreferences? _prefs;
@@ -87,6 +88,17 @@ class SessionStorageService {
     } catch (_) {
       return null;
     }
+  }
+
+  // --- FCM Token ---
+  Future<void> saveFcmToken(String token) async {
+    await init();
+    await _prefs?.setString(_keyFcmToken, token);
+  }
+
+  Future<String?> getFcmToken() async {
+    await init();
+    return _prefs?.getString(_keyFcmToken);
   }
 
   // --- Clear Session on Logout / Expiry ---

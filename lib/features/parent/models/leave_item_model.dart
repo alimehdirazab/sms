@@ -64,6 +64,7 @@ class LeaveItemModel extends Equatable {
         '';
 
     final applicantType = json['applicantType']?.toString() ??
+        json['aplicantType']?.toString() ??
         json['type']?.toString() ??
         '';
 
@@ -104,8 +105,9 @@ class LeaveItemModel extends Equatable {
 
     final attachment = json['attachment']?.toString();
 
+    final upperType = applicantType.toUpperCase();
     final studentId = json['studentId']?.toString() ??
-        (applicantType == 'STUDENT' ? applicantId : null);
+        ((upperType == 'STUDENT' || upperType == 'STUDEN') ? applicantId : null);
 
     return LeaveItemModel(
       id: id,

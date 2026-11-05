@@ -17,6 +17,7 @@ import '../../features/parent/fees/parent_fees_screen.dart';
 import '../../features/parent/calendar/parent_calendar_screen.dart';
 import '../../features/teacher/calendar/teacher_calendar_screen.dart';
 import '../../features/teacher/schedule/teacher_weekly_schedule_screen.dart';
+import '../../features/teacher/leave/teacher_leave_screen.dart';
 
 class RouteNames {
   static const splash = 'splash';
@@ -126,7 +127,7 @@ final appRouter = GoRouter(
                   name: RouteNames.teacherLeave,
                   parentNavigatorKey: _rootNavigatorKey,
                   pageBuilder: (context, state) => _buildPageWithTransition(
-                    child: const LeavesManagementScreen(isTeacher: true),
+                    child: const TeacherLeaveScreen(),
                     state: state,
                   ),
                 ),
@@ -135,7 +136,7 @@ final appRouter = GoRouter(
                   name: RouteNames.teacherApiLeaves,
                   parentNavigatorKey: _rootNavigatorKey,
                   pageBuilder: (context, state) => _buildPageWithTransition(
-                    child: const LeavesManagementScreen(isTeacher: true),
+                    child: const TeacherLeaveScreen(),
                     state: state,
                   ),
                 ),

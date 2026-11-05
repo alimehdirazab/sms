@@ -155,5 +155,41 @@ void main() {
       expect(ApiConstants.attendanceRecent, '/attendance/recent');
       expect(ApiConstants.attendanceMyHistory, '/attendance/my-attendance');
     });
+
+    test('LeaveItemModel handles both applicantType and aplicantType with STUDEN and TEACHER', () {
+      final studentLeave = LeaveItemModel.fromJson(const {
+        'id': 'lv_studen_1',
+        'leaveType': 'Sick Leave',
+        'startDate': '2026-11-01',
+        'endDate': '2026-11-03',
+        'description': 'Student illness',
+        'status': 'PENDING',
+        'aplicantType': 'STUDEN',
+        'applicantId': 's_101',
+        'applicantName': 'Zaid Khan',
+      });
+
+      expect(studentLeave.id, 'lv_studen_1');
+      expect(studentLeave.applicantType, 'STUDEN');
+      expect(studentLeave.applicantName, 'Zaid Khan');
+      expect(studentLeave.studentId, 's_101');
+
+      final teacherLeave = LeaveItemModel.fromJson(const {
+        'id': 'lv_teacher_1',
+        'leaveType': 'Casual Leave',
+        'startDate': '2026-11-10',
+        'endDate': '2026-11-10',
+        'description': 'Personal work',
+        'status': 'APPROVED',
+        'aplicantType': 'TEACHER',
+        'applicantId': 't_201',
+        'applicantName': 'Mr. Ahmed',
+      });
+
+      expect(teacherLeave.id, 'lv_teacher_1');
+      expect(teacherLeave.applicantType, 'TEACHER');
+      expect(teacherLeave.applicantName, 'Mr. Ahmed');
+      expect(teacherLeave.studentId, isNull);
+    });
   });
 }

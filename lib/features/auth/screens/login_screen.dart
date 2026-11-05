@@ -19,6 +19,23 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final state = context.read<AuthBloc>().state;
+      if (state is AuthSuccess) {
+        final role = state.role.toUpperCase();
+        if (role == 'TEACHER') {
+          context.goNamed(RouteNames.teacherHome);
+        } else {
+          context.goNamed(RouteNames.parentHome);
+        }
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
