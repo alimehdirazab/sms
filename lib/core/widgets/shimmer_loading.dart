@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../theme/app_colors.dart';
 
+/// Shimmer loader matching DESIGN.md Section 6 & 7.9:
+/// Fill #F5F4F1, border 1px solid #E8E6E1, smooth 1000ms pulse.
 class ShimmerLoading extends StatelessWidget {
   final int itemCount;
   final double itemHeight;
@@ -8,15 +11,15 @@ class ShimmerLoading extends StatelessWidget {
   const ShimmerLoading({
     super.key,
     this.itemCount = 6,
-    this.itemHeight = 80,
+    this.itemHeight = 72,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Shimmer.fromColors(
-      baseColor: colorScheme.surfaceContainerHighest,
-      highlightColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      baseColor: AppColors.surfaceInset,
+      highlightColor: AppColors.surface,
+      period: const Duration(milliseconds: 1000),
       child: ListView.builder(
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
@@ -24,12 +27,13 @@ class ShimmerLoading extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemBuilder: (context, index) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 10),
             child: Container(
               height: itemHeight,
               decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.border, width: 1),
               ),
             ),
           );
@@ -42,25 +46,28 @@ class ShimmerLoading extends StatelessWidget {
 class ShimmerCard extends StatelessWidget {
   final double height;
   final double width;
+  final double borderRadius;
 
   const ShimmerCard({
     super.key,
-    this.height = 120,
+    this.height = 110,
     this.width = double.infinity,
+    this.borderRadius = AppRadius.lg,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Shimmer.fromColors(
-      baseColor: colorScheme.surfaceContainerHighest,
-      highlightColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      baseColor: AppColors.surfaceInset,
+      highlightColor: AppColors.surface,
+      period: const Duration(milliseconds: 1000),
       child: Container(
         height: height,
         width: width,
         decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(borderRadius),
+          border: Border.all(color: AppColors.border, width: 1),
         ),
       ),
     );
@@ -73,16 +80,16 @@ class ShimmerGrid extends StatelessWidget {
 
   const ShimmerGrid({
     super.key,
-    this.itemCount = 6,
+    this.itemCount = 4,
     this.crossAxisCount = 2,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Shimmer.fromColors(
-      baseColor: colorScheme.surfaceContainerHighest,
-      highlightColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      baseColor: AppColors.surfaceInset,
+      highlightColor: AppColors.surface,
+      period: const Duration(milliseconds: 1000),
       child: GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
         shrinkWrap: true,
@@ -91,14 +98,15 @@ class ShimmerGrid extends StatelessWidget {
           crossAxisCount: crossAxisCount,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 1.2,
+          childAspectRatio: 1.3,
         ),
         itemCount: itemCount,
         itemBuilder: (context, index) {
           return Container(
             decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border, width: 1),
             ),
           );
         },

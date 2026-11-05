@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../bloc/auth_bloc.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/animated_button.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -22,137 +24,147 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return BlocListener<AuthBloc, AuthState>(
-      listener: (context, state) {
-        if (state is ForgotPasswordSent) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.green.shade700,
-            ),
-          );
-          // Navigate to reset password with email pre-filled or token input
-          context.pushNamed(RouteNames.resetPassword);
-        } else if (state is AuthError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: colorScheme.error,
-            ),
-          );
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Forgot Password'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.pop(),
-          ),
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 20),
-                  Icon(
-                    Icons.lock_reset_rounded,
-                    size: 72,
-                    color: colorScheme.primary,
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Reset Your Password',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Enter your registered email address to receive password reset instructions.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Registered Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      hintText: 'e.g. parent@school.com',
-                    ),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!val.contains('@')) {
-                        return 'Please enter a valid email address';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          _emailController.text = 'parent@school.com';
-                        },
-                        child: const Text('Quick Fill: Parent'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          _emailController.text = 'principal@school.com';
-                        },
-                        child: const Text('Quick Fill: Principal'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  BlocBuilder<AuthBloc, AuthState>(
-                    builder: (context, state) {
-                      return AnimatedBouncyButton(
-                        label: 'Send Reset Instructions',
-                        icon: Icons.send_rounded,
-                        onPressed: state is AuthLoading ? null : _handleSend,
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: colorScheme.onPrimary,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: TextButton(
-                      onPressed: () => context.pushNamed(RouteNames.resetPassword),
-                      child: const Text('Already have a reset token? Click here'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _handleSend() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
             ForgotPasswordRequested(email: _emailController.text.trim()),
           );
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is ForgotPasswordSent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          context.pushNamed(RouteNames.resetPassword);
+        } else if (state is AuthError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        appBar: AppBar(
+          title: Text(
+            'Forgot password',
+            style: GoogleFonts.instrumentSerif(
+              fontSize: 24,
+              color: AppColors.ink,
+              letterSpacing: -0.02 * 24,
+            ),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, size: 20),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 442),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: AppColors.border, width: 1),
+                    boxShadow: AppShadows.subtle,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 52,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: AppColors.accentTint,
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(color: AppColors.infoBorder, width: 1),
+                            ),
+                            child: const Icon(
+                              Icons.lock_reset_rounded,
+                              size: 26,
+                              color: AppColors.accent,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Reset your password',
+                          style: GoogleFonts.instrumentSerif(
+                            fontSize: 26,
+                            fontWeight: FontWeight.normal,
+                            color: AppColors.ink,
+                            letterSpacing: -0.02 * 26,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Enter your registered institutional email to receive password reset instructions.',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: AppColors.inkMuted,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 28),
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            labelText: 'Registered email',
+                            prefixIcon: Icon(Icons.mail_outline_rounded, size: 18),
+                            hintText: 'e.g. parent@school.edu.pk',
+                          ),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!val.contains('@')) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                            final isLoading = state is AuthLoading;
+                            return AnimatedBouncyButton(
+                              label: 'Send reset instructions',
+                              icon: Icons.send_rounded,
+                              isLoading: isLoading,
+                              onPressed: isLoading ? null : _handleSend,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

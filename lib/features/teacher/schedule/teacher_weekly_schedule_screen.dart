@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:google_fonts/google_fonts.dart';
 import '../bloc/teacher_bloc.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../auth/models/notification_model.dart';
+import '../../shared/widgets/stat_card.dart';
 
 /// Full-week timetable for the teacher, grouped by weekday with the current
 /// day highlighted and its periods marked as "Now" / "Next".
@@ -66,7 +68,18 @@ class _TeacherWeeklyScheduleScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Weekly Timetable')),
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(
+        title: Text(
+          'Weekly timetable',
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
+      ),
       body: BlocBuilder<TeacherBloc, TeacherState>(
         buildWhen: (_, state) =>
             state is TeacherWeeklyScheduleLoaded ||
@@ -88,32 +101,48 @@ class _TeacherWeeklyScheduleScreenState
 
           return Column(
             children: [
-              TabBar(
-                controller: _tabController,
-                isScrollable: true,
-                tabAlignment: TabAlignment.start,
-                tabs: _weekdays.map((day) {
-                  final isToday = day == _todayName;
-                  return Tab(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(day.substring(0, 3)),
-                        if (isToday) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              shape: BoxShape.circle,
+              Container(
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+                  indicatorColor: AppColors.accent,
+                  indicatorWeight: 2,
+                  labelColor: AppColors.accent,
+                  unselectedLabelColor: AppColors.inkMuted,
+                  tabs: _weekdays.map((day) {
+                    final isToday = day == _todayName;
+                    return Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            day.substring(0, 3),
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
                             ),
                           ),
+                          if (isToday) ...[
+                            const SizedBox(width: 5),
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(
+                                color: AppColors.accent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                  );
-                }).toList(),
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
               Expanded(
                 child: TabBarView(
@@ -122,8 +151,9 @@ class _TeacherWeeklyScheduleScreenState
                     final periods = week[day] ?? const <ScheduleModel>[];
                     if (periods.isEmpty) {
                       return const EmptyStateWidget(
-                        message: 'No classes scheduled.',
-                        icon: Icons.free_breakfast,
+                        message: 'No classes scheduled',
+                        subtitle: 'Enjoy your free day or prepare your lesson plans.',
+                        icon: Icons.free_breakfast_outlined,
                       );
                     }
                     return ListView.separated(
@@ -160,107 +190,99 @@ class _PeriodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final now = DateTime.now();
     final isNow = isToday &&
         now.isAfter(period.startTime) &&
         now.isBefore(period.endTime);
-    // The first period of today is highlighted as "Next" before it starts.
     final isNext = isToday && isFirst && now.isBefore(period.startTime);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      color: isNow ? colorScheme.primaryContainer.withValues(alpha: 0.5) : null,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 64,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    DateFormatter.formatTime(period.startTime),
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                  Text(
-                    DateFormatter.formatTime(period.endTime),
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 3,
-              height: 46,
-              decoration: BoxDecoration(
-                color: isNow ? colorScheme.primary : colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    period.subject,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${period.className} · Section ${period.section}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (isNow)
-              _Badge(label: 'Now', color: colorScheme.primary)
-            else if (isNext)
-              _Badge(label: 'Next', color: colorScheme.tertiary),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _Badge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
+        color: isNow ? AppColors.accentTint.withValues(alpha: 0.5) : AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: isNow ? AppColors.infoBorder : AppColors.border,
+          width: 1,
         ),
+        boxShadow: AppShadows.subtle,
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 68,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  DateFormatter.formatTime(period.startTime),
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isNow ? AppColors.accent : AppColors.ink,
+                  ),
+                ),
+                Text(
+                  DateFormatter.formatTime(period.endTime),
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: AppColors.inkMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 2.5,
+            height: 42,
+            decoration: BoxDecoration(
+              color: isNow ? AppColors.accent : AppColors.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  period.subject,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${period.className} · Section ${period.section}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.inkMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (isNow)
+            const StatusPill(
+              label: 'Now',
+              color: AppColors.accent,
+              backgroundColor: AppColors.accentTint,
+              borderColor: AppColors.infoBorder,
+            )
+          else if (isNext)
+            const StatusPill(
+              label: 'Next',
+              color: AppColors.warning,
+              backgroundColor: AppColors.warningBg,
+              borderColor: AppColors.warningBorder,
+            ),
+        ],
       ),
     );
   }

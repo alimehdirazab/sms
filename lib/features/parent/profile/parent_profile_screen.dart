@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../bloc/parent_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_formatter.dart';
-import '../../../core/widgets/shimmer_loading.dart';
 import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import '../../auth/models/attendance_model.dart';
 import '../../auth/models/user_model.dart';
+import '../bloc/parent_bloc.dart';
 
 class ParentProfileScreen extends StatefulWidget {
   const ParentProfileScreen({super.key});
@@ -37,11 +40,18 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Text(
+          'Profile',
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
       ),
       body: BlocBuilder<ParentBloc, ParentState>(
         buildWhen: (_, state) =>
@@ -68,124 +78,76 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
             });
 
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Child Switcher for profile
+                  // Inset Child Switcher
                   if (profile.children.length > 1) ...[
-                    SizedBox(
-                      height: 44,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: profile.children.length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 8),
-                        itemBuilder: (context, index) {
-                          final c = profile.children[index];
-                          final isSelected = index == state.selectedChildIndex;
-                          return ChoiceChip(
-                            label: Text(c.name),
-                            selected: isSelected,
-                            onSelected: (_) {
-                              context
-                                  .read<ParentBloc>()
-                                  .add(SelectChild(index));
-                              _loadAttendance(c.id);
-                            },
-                          );
-                        },
-                      ),
+                    _buildChildSwitcher(
+                      children: profile.children,
+                      selectedIndex: state.selectedChildIndex,
                     ),
                     const SizedBox(height: 16),
                   ],
 
-                  // Child Details Card
-                  _buildChildDetails(child, colorScheme),
+                  // Student Details Card
+                  _buildChildDetails(child),
                   const SizedBox(height: 16),
 
-                  // Quick links to the new modules
+                  // Quick links to key modules
                   _buildQuickLinks(),
                   const SizedBox(height: 16),
 
-                  // Parent Contact Card
-                  _buildParentContact(profile, colorScheme),
+                  // Parent Contact Information Card
+                  _buildParentContact(profile),
                   const SizedBox(height: 16),
 
-                  // PTM Schedule
-                  _buildPTMSchedule(colorScheme),
+                  // PTM Schedule Card
+                  _buildPTMSchedule(),
                   const SizedBox(height: 16),
 
-                  // Monthly Attendance Calendar
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Monthly Attendance',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              TextButton(
-                                onPressed: () async {
-                                  final picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: _selectedMonth ?? DateTime.now(),
-                                    firstDate: DateTime(2024),
-                                    lastDate: DateTime.now(),
-                                  );
-                                  if (picked != null) {
-                                    setState(() {
-                                      _selectedMonth = picked;
-                                    });
-                                    _loadAttendance(child.id);
-                                  }
-                                },
-                                child: Text(
-                                  DateFormatter.formatMonthYear(
-                                      _selectedMonth ?? DateTime.now()),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _buildAttendanceCalendar(),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  // Monthly Attendance Calendar Card
+                  _buildAttendanceSection(child),
+                  const SizedBox(height: 20),
 
-                  // Change Password
+                  // Security & Account actions
                   OutlinedButton.icon(
                     onPressed: () => _showChangePasswordDialog(context),
-                    icon: const Icon(Icons.lock_outlined),
-                    label: const Text('Change Password'),
+                    icon: const Icon(Icons.lock_outline, size: 18),
+                    label: const Text('Change password'),
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 48),
+                      foregroundColor: AppColors.ink,
+                      side: const BorderSide(color: AppColors.border),
+                      minimumSize: const Size(double.infinity, 46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
 
-                  // Logout
                   OutlinedButton.icon(
                     onPressed: () => _showLogoutDialog(context),
-                    icon: const Icon(Icons.logout, color: Colors.red),
+                    icon: const Icon(Icons.logout, size: 18, color: AppColors.danger),
                     label: const Text(
-                      'Logout',
-                      style: TextStyle(color: Colors.red),
+                      'Sign out',
+                      style: TextStyle(
+                        color: AppColors.danger,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
-                      minimumSize: const Size(double.infinity, 48),
+                      foregroundColor: AppColors.danger,
+                      side: const BorderSide(color: AppColors.dangerBorder),
+                      backgroundColor: AppColors.dangerBg,
+                      minimumSize: const Size(double.infinity, 46),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
             );
@@ -199,137 +161,275 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
     );
   }
 
-  Widget _buildQuickLinks() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.event_available),
-              title: const Text('Leave Applications'),
-              subtitle: const Text('Apply & track leave requests'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.pushNamed(RouteNames.parentLeave),
-            ),
-            const Divider(height: 1, indent: 56),
-            ListTile(
-              leading: const Icon(Icons.payments_outlined),
-              title: const Text('Fees & Payments'),
-              subtitle: const Text('View dues, pay and track verification'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.pushNamed(RouteNames.parentFees),
-            ),
-            const Divider(height: 1, indent: 56),
-            ListTile(
-              leading: const Icon(Icons.calendar_month),
-              title: const Text('Academic Calendar'),
-              subtitle: const Text('Holidays, exams and events'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.pushNamed(RouteNames.parentCalendar),
-            ),
-          ],
-        ),
+  Widget _buildChildSwitcher({
+    required List<StudentModel> children,
+    required int selectedIndex,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceInset,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.borderFaint),
       ),
-    );
-  }
-
-  Widget _buildChildDetails(StudentModel child, ColorScheme colorScheme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 36,
-              backgroundColor: colorScheme.primaryContainer,
-              child: Text(
-                child.name.isNotEmpty ? child.name[0].toUpperCase() : '?',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onPrimaryContainer,
+      padding: const EdgeInsets.all(3),
+      child: Row(
+        children: List.generate(children.length, (index) {
+          final isSelected = index == selectedIndex;
+          final c = children[index];
+          return Expanded(
+            child: InkWell(
+              onTap: () {
+                context.read<ParentBloc>().add(SelectChild(index));
+                _loadAttendance(c.id);
+              },
+              borderRadius: BorderRadius.circular(AppRadius.xs),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.surface : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                  border: isSelected
+                      ? Border.all(color: AppColors.border)
+                      : Border.all(color: Colors.transparent),
+                ),
+                child: Center(
+                  child: Text(
+                    c.name,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected ? AppColors.ink : AppColors.inkSecondary,
+                        ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              child.name,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${child.className} | Section ${child.section}',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 8),
-            _buildInfoChip('Roll: ${child.rollNumber}', Icons.badge, colorScheme),
-            const SizedBox(height: 4),
-            _buildInfoChip(
-                'RFID: ${child.rfidCardId ?? "N/A"}', Icons.credit_card, colorScheme),
-          ],
-        ),
+          );
+        }),
       ),
     );
   }
 
-  Widget _buildInfoChip(String label, IconData icon, ColorScheme colorScheme) {
+  Widget _buildChildDetails(StudentModel child) {
+    final initials = child.name.trim().isNotEmpty
+        ? child.name.trim().split(' ').map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase()
+        : '?';
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
         children: [
-          Icon(icon, size: 16, color: colorScheme.primary),
-          const SizedBox(width: 6),
-          Text(label, style: const TextStyle(fontSize: 13)),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.accentTint,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.borderFaint),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initials,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: AppColors.accent,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            child.name,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ink,
+                ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${child.className} · Section ${child.section}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.inkSecondary,
+                ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: [
+              _buildInfoChip(
+                label: 'Roll: ${child.rollNumber}',
+                icon: Icons.badge_outlined,
+              ),
+              _buildInfoChip(
+                label: 'RFID: ${child.rfidCardId ?? "N/A"}',
+                icon: Icons.credit_card_outlined,
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildParentContact(ParentModel profile, ColorScheme colorScheme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Parent Information',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
+  Widget _buildInfoChip({required String label, required IconData icon}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceInset,
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        border: Border.all(color: AppColors.borderFaint),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.inkSecondary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.ink,
             ),
-            const SizedBox(height: 12),
-            _contactRow(Icons.person, 'Name', profile.name, colorScheme),
-            const SizedBox(height: 8),
-            _contactRow(Icons.call, 'Phone', profile.phoneNumber ?? 'N/A', colorScheme),
-            const SizedBox(height: 8),
-            _contactRow(Icons.email, 'Email', profile.email ?? 'N/A', colorScheme),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _contactRow(
-      IconData icon, String label, String value, ColorScheme colorScheme) {
+  Widget _buildQuickLinks() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          _buildLinkTile(
+            icon: Icons.event_available_outlined,
+            title: 'Leave applications',
+            subtitle: 'Apply & track leave requests',
+            onTap: () => context.pushNamed(RouteNames.parentLeave),
+          ),
+          const Divider(height: 1, thickness: 1, color: AppColors.borderFaint, indent: 56),
+          _buildLinkTile(
+            icon: Icons.receipt_long_outlined,
+            title: 'Fees & payments',
+            subtitle: 'View dues, pay and track verification',
+            onTap: () => context.pushNamed(RouteNames.parentFees),
+          ),
+          const Divider(height: 1, thickness: 1, color: AppColors.borderFaint, indent: 56),
+          _buildLinkTile(
+            icon: Icons.calendar_month_outlined,
+            title: 'Academic calendar',
+            subtitle: 'Holidays, exams and school events',
+            onTap: () => context.pushNamed(RouteNames.parentCalendar),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLinkTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceInset,
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+          border: Border.all(color: AppColors.borderFaint),
+        ),
+        alignment: Alignment.center,
+        child: Icon(icon, size: 20, color: AppColors.accent),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.ink,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(
+          fontSize: 12,
+          color: AppColors.inkSecondary,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.inkMuted),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildParentContact(ParentModel profile) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Parent information',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ink,
+                ),
+          ),
+          const SizedBox(height: 12),
+          _contactRow(Icons.person_outline, 'Name', profile.name),
+          const Divider(height: 16, thickness: 1, color: AppColors.borderFaint),
+          _contactRow(Icons.phone_outlined, 'Phone', profile.phoneNumber ?? 'N/A'),
+          const Divider(height: 16, thickness: 1, color: AppColors.borderFaint),
+          _contactRow(Icons.email_outlined, 'Email', profile.email ?? 'N/A'),
+        ],
+      ),
+    );
+  }
+
+  Widget _contactRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: colorScheme.primary),
+        Icon(icon, size: 16, color: AppColors.accent),
         const SizedBox(width: 10),
-        Text('$label: ', style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: AppColors.inkSecondary,
+          ),
+        ),
         Expanded(
           child: Text(
             value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink,
+            ),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -337,36 +437,120 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
     );
   }
 
-  Widget _buildPTMSchedule(ColorScheme colorScheme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.teal.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.groups, color: Colors.teal),
+  Widget _buildPTMSchedule() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceInset,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              border: Border.all(color: AppColors.borderFaint),
             ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('PTM Scheduled',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text('15 July 2026 at 10:00 AM',
-                      style: TextStyle(fontSize: 13)),
-                ],
-              ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.groups_outlined, color: AppColors.accent, size: 22),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'PTM scheduled',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  '15 July 2026 at 10:00 AM',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.inkSecondary,
+                  ),
+                ),
+              ],
             ),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
+          ),
+          const Icon(Icons.chevron_right, size: 20, color: AppColors.inkMuted),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceSection(StudentModel child) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Monthly attendance',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink,
+                    ),
+              ),
+              InkWell(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: _selectedMonth ?? DateTime.now(),
+                    firstDate: DateTime(2024),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _selectedMonth = picked;
+                    });
+                    _loadAttendance(child.id);
+                  }
+                },
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.accent),
+                      const SizedBox(width: 6),
+                      Text(
+                        DateFormatter.formatMonthYear(
+                          _selectedMonth ?? DateTime.now(),
+                        ),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildAttendanceCalendar(),
+        ],
       ),
     );
   }
@@ -378,7 +562,15 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
         if (state is ParentAttendanceLoaded) {
           final records = state.monthlyAttendance;
           if (records.isEmpty) {
-            return const Text('Loading...');
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  'No attendance data found',
+                  style: TextStyle(color: AppColors.inkMuted, fontSize: 13),
+                ),
+              ),
+            );
           }
 
           final month = _selectedMonth ?? DateTime.now();
@@ -396,12 +588,10 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                         child: Center(
                           child: Text(
                             d,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 11,
+                              color: AppColors.inkMuted,
                             ),
                           ),
                         ),
@@ -409,7 +599,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                     )
                     .toList(),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               // Calendar grid
               Wrap(
                 children: [
@@ -425,30 +615,37 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                     final isAbsent =
                         record?.status == AttendanceStatus.absent;
 
+                    Color bg = AppColors.surfaceInset;
+                    Color border = AppColors.borderFaint;
+                    Color text = AppColors.inkMuted;
+
+                    if (isPresent) {
+                      bg = AppColors.successBg;
+                      border = AppColors.successBorder;
+                      text = AppColors.success;
+                    } else if (isAbsent) {
+                      bg = AppColors.dangerBg;
+                      border = AppColors.dangerBorder;
+                      text = AppColors.danger;
+                    }
+
                     return SizedBox(
                       width: 36,
                       height: 36,
                       child: Container(
                         margin: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
-                          color: isPresent
-                              ? Colors.green.withValues(alpha: 0.3)
-                              : isAbsent
-                                  ? Colors.red.withValues(alpha: 0.2)
-                                  : Colors.grey.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
+                          color: bg,
+                          border: Border.all(color: border),
+                          borderRadius: BorderRadius.circular(AppRadius.xs),
                         ),
                         child: Center(
                           child: Text(
                             '$day',
                             style: TextStyle(
                               fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: isPresent
-                                  ? Colors.green.shade800
-                                  : isAbsent
-                                      ? Colors.red.shade800
-                                      : null,
+                              fontWeight: FontWeight.w600,
+                              color: text,
                             ),
                           ),
                         ),
@@ -457,21 +654,24 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                   }),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _legendDot(Colors.green, 'Present'),
+                  _legendDot(AppColors.success, 'Present'),
                   const SizedBox(width: 16),
-                  _legendDot(Colors.red, 'Absent'),
+                  _legendDot(AppColors.danger, 'Absent'),
                   const SizedBox(width: 16),
-                  _legendDot(Colors.grey, 'No Data'),
+                  _legendDot(AppColors.inkMuted, 'No data'),
                 ],
               ),
             ],
           );
         }
-        return const Center(child: CircularProgressIndicator());
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: 24),
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        );
       },
     );
   }
@@ -481,15 +681,21 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 10,
-          height: 10,
+          width: 8,
+          height: 8,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(2),
+            color: color,
+            shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 11)),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.inkSecondary,
+          ),
+        ),
       ],
     );
   }
@@ -497,10 +703,23 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
   void _showChangePasswordDialog(BuildContext context) {
     final oldPwdCtrl = TextEditingController();
     final newPwdCtrl = TextEditingController();
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Change Password'),
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        title: const Text(
+          'Change password',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            color: AppColors.ink,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -508,7 +727,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
               controller: oldPwdCtrl,
               obscureText: true,
               decoration: const InputDecoration(
-                labelText: 'Current Password',
+                labelText: 'Current password',
               ),
             ),
             const SizedBox(height: 12),
@@ -516,7 +735,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
               controller: newPwdCtrl,
               obscureText: true,
               decoration: const InputDecoration(
-                labelText: 'New Password',
+                labelText: 'New password',
               ),
             ),
           ],
@@ -524,7 +743,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.inkSecondary)),
           ),
           FilledButton(
             onPressed: () {
@@ -541,6 +760,10 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
                 );
               }
             },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.accent,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Update'),
           ),
         ],
@@ -552,20 +775,38 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        title: const Text(
+          'Sign out',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+            color: AppColors.ink,
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to sign out?',
+          style: TextStyle(color: AppColors.inkSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.inkSecondary)),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               context.goNamed(RouteNames.login);
             },
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Logout'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sign out'),
           ),
         ],
       ),

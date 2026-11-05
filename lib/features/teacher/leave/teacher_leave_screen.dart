@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../parent/models/leave_api_model.dart';
 import '../../parent/repositories/leave_repository.dart';
+import '../../shared/widgets/stat_card.dart';
 
-/// Teacher-facing leave management.
+/// Teacher-facing leave management aligned with DESIGN.md.
 /// Supports 2 types of leaves:
 /// 1. Teacher's own leaves record (applicantType = 'TEACHER')
 /// 2. Leaves asked by students (applicantType = 'STUDEN')
@@ -23,7 +26,6 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
 
-  // 2 Types of leaves: TEACHER (own leaves) or STUDEN (student leave requests)
   String _selectedApplicantType = 'TEACHER';
 
   bool _isLoading = true;
@@ -106,14 +108,24 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Teacher Leaves'),
+        title: Text(
+          'Teacher leaves',
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
         bottom: TabBar(
           controller: _tabController,
-          isScrollable: false,
+          indicatorColor: AppColors.accent,
+          indicatorWeight: 2,
+          labelColor: AppColors.accent,
+          unselectedLabelColor: AppColors.inkMuted,
           tabs: const [
             Tab(text: 'All'),
             Tab(text: 'Pending'),
@@ -125,58 +137,82 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
       floatingActionButton: _selectedApplicantType == 'TEACHER'
           ? FloatingActionButton.extended(
               onPressed: _openApplyLeaveModal,
-              icon: const Icon(Icons.add),
-              label: const Text('Apply Leave'),
+              backgroundColor: AppColors.accent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 20),
+              label: Text(
+                'Apply leave',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             )
           : null,
       body: Column(
         children: [
-          // 2 Types Switcher: Teacher's own leaves vs Student leave requests
+          // Segmented Control Pill Track matching DESIGN.md Section 7.4
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-            child: SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<String>(
-                style: SegmentedButton.styleFrom(
-                  selectedBackgroundColor: colorScheme.primaryContainer,
-                  selectedForegroundColor: colorScheme.onPrimaryContainer,
-                ),
-                segments: const [
-                  ButtonSegment<String>(
-                    value: 'TEACHER',
-                    label: Text('My Leaves'),
-                    icon: Icon(Icons.badge_outlined, size: 18),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceInset,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(color: AppColors.border, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildSegmentButton(
+                      label: 'My leaves',
+                      icon: Icons.badge_outlined,
+                      isSelected: _selectedApplicantType == 'TEACHER',
+                      onTap: () {
+                        if (_selectedApplicantType != 'TEACHER') {
+                          setState(() => _selectedApplicantType = 'TEACHER');
+                          _loadLeaves(page: 1);
+                        }
+                      },
+                    ),
                   ),
-                  ButtonSegment<String>(
-                    value: 'STUDEN',
-                    label: Text('Student Leaves'),
-                    icon: Icon(Icons.school_outlined, size: 18),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: _buildSegmentButton(
+                      label: 'Student leaves',
+                      icon: Icons.school_outlined,
+                      isSelected: _selectedApplicantType == 'STUDEN',
+                      onTap: () {
+                        if (_selectedApplicantType != 'STUDEN') {
+                          setState(() => _selectedApplicantType = 'STUDEN');
+                          _loadLeaves(page: 1);
+                        }
+                      },
+                    ),
                   ),
                 ],
-                selected: {_selectedApplicantType},
-                onSelectionChanged: (newSelection) {
-                  setState(() {
-                    _selectedApplicantType = newSelection.first;
-                  });
-                  _loadLeaves(page: 1);
-                },
               ),
             ),
           ),
 
-          // Search Bar
+          // Search Field
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: _selectedApplicantType == 'TEACHER'
                     ? 'Search my leaves by type or reason...'
                     : 'Search student requests by name or reason...',
-                prefixIcon: const Icon(Icons.search, size: 20),
+                prefixIcon: const Icon(Icons.search_rounded, size: 18),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
+                        icon: const Icon(Icons.clear_rounded, size: 18),
                         onPressed: () {
                           _searchController.clear();
                           _loadLeaves(page: 1);
@@ -187,24 +223,61 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                   vertical: 0,
                   horizontal: 16,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
               onSubmitted: (_) => _loadLeaves(page: 1),
             ),
           ),
 
           // Content Area
-          Expanded(child: _buildBody(colorScheme)),
+          Expanded(child: _buildBody()),
         ],
       ),
     );
   }
 
-  Widget _buildBody(ColorScheme colorScheme) {
+  Widget _buildSegmentButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: isSelected
+              ? Border.all(color: AppColors.border, width: 1)
+              : null,
+          boxShadow: isSelected ? AppShadows.subtle : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? AppColors.accent : AppColors.inkMuted,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? AppColors.accent : AppColors.inkMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
     if (_isLoading && _leaves.isEmpty) {
-      return const ShimmerLoading(itemCount: 5, itemHeight: 100);
+      return const ShimmerLoading(itemCount: 5, itemHeight: 110);
     }
 
     if (_errorMessage != null && _leaves.isEmpty) {
@@ -216,39 +289,22 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
 
     if (_leaves.isEmpty) {
       final isOwn = _selectedApplicantType == 'TEACHER';
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isOwn ? Icons.event_available : Icons.school_outlined,
-              size: 64,
-              color: colorScheme.outline,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              isOwn
-                  ? 'No teacher leaves found'
-                  : 'No student leave requests found',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            if (isOwn)
-              FilledButton.tonal(
-                onPressed: _openApplyLeaveModal,
-                child: const Text('Apply for Leave'),
-              ),
-          ],
-        ),
+      return EmptyStateWidget(
+        message: isOwn ? 'No leave records found' : 'No student requests found',
+        subtitle: isOwn
+            ? 'All caught up. Submit a leave application when you need time off.'
+            : 'No pending student leave requests requiring your review.',
+        icon: isOwn ? Icons.event_available_outlined : Icons.school_outlined,
+        actionLabel: isOwn ? 'Apply for leave' : null,
+        onAction: isOwn ? _openApplyLeaveModal : null,
       );
     }
 
     return RefreshIndicator(
+      color: AppColors.accent,
       onRefresh: () async => _loadLeaves(page: 1),
       child: ListView.separated(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         itemCount: _leaves.length + (_hasNextPage ? 1 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
@@ -258,7 +314,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                 padding: const EdgeInsets.all(16),
                 child: OutlinedButton(
                   onPressed: () => _loadLeaves(page: _currentPage + 1),
-                  child: const Text('Load More'),
+                  child: const Text('Load more'),
                 ),
               ),
             );
@@ -272,20 +328,17 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
   }
 
   Widget _buildLeaveCard(LeaveItemModel item) {
-    final statusColor = _resolveStatusColor(item.status);
-    final theme = Theme.of(context);
     final isStudentLeave = _selectedApplicantType == 'STUDEN';
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
+        boxShadow: AppShadows.subtle,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: () => _showLeaveDetailsModal(item),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -299,60 +352,51 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                   Expanded(
                     child: Text(
                       item.leaveType,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      item.status.displayName,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
+                  StatusPill.semantic(
+                    context,
+                    label: _statusSentenceCase(item.status),
+                    kind: item.status.name,
                   ),
                 ],
               ),
 
               // Student Info Badge (When viewing student leaves)
               if (isStudentLeave || item.applicantName.isNotEmpty) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
-                      Icons.person_outline,
+                    const Icon(
+                      Icons.person_outline_rounded,
                       size: 15,
-                      color: theme.colorScheme.primary,
+                      color: AppColors.accent,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     Text(
                       item.applicantName.isNotEmpty
                           ? item.applicantName
                           : 'Student',
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.primary,
+                        color: AppColors.accent,
                       ),
                     ),
                     if (item.roleOrClass.isNotEmpty) ...[
                       const SizedBox(width: 6),
                       Text(
                         '(${item.roleOrClass})',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: AppColors.inkMuted,
                         ),
                       ),
                     ],
@@ -361,9 +405,10 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                       const Spacer(),
                       Text(
                         'ID: ${item.studentId}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurfaceVariant,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.inkMuted,
                         ),
                       ),
                     ],
@@ -376,23 +421,26 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
               // Date Range & Duration
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.calendar_today_outlined,
-                    size: 15,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    size: 14,
+                    color: AppColors.inkMuted,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     '${item.startDate} → ${item.endDate}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.inkSecondary,
                     ),
                   ),
                   const Spacer(),
                   Text(
                     '${item.totalDays} day(s)',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.inkMuted,
                     ),
                   ),
                 ],
@@ -402,7 +450,10 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                 const SizedBox(height: 8),
                 Text(
                   item.description,
-                  style: theme.textTheme.bodyMedium,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: AppColors.inkSecondary,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -411,26 +462,28 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
               // Action Buttons for Pending leaves
               if (item.status == LeaveStatus.pending) ...[
                 const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Teacher can withdraw/delete their OWN pending leave
                     if (!isStudentLeave) ...[
                       TextButton.icon(
                         style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.error,
+                          foregroundColor: AppColors.danger,
                         ),
-                        icon: const Icon(Icons.delete_outline, size: 18),
+                        icon: const Icon(Icons.delete_outline_rounded, size: 16),
                         label: const Text('Withdraw'),
                         onPressed: () => _confirmDeleteLeave(item),
                       ),
                     ],
-                    // Teacher can APPROVE or REJECT student leaves
                     if (isStudentLeave) ...[
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.green.shade700,
-                          visualDensity: VisualDensity.compact,
+                          foregroundColor: AppColors.success,
+                          side: const BorderSide(color: AppColors.successBorder),
+                          minimumSize: const Size(0, 32),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
                         ),
                         onPressed: () => _updateStatusDialog(item, 'APPROVED'),
                         child: const Text('Approve'),
@@ -438,8 +491,10 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                       const SizedBox(width: 8),
                       OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red.shade700,
-                          visualDensity: VisualDensity.compact,
+                          foregroundColor: AppColors.danger,
+                          side: const BorderSide(color: AppColors.dangerBorder),
+                          minimumSize: const Size(0, 32),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
                         ),
                         onPressed: () => _updateStatusDialog(item, 'REJECTED'),
                         child: const Text('Reject'),
@@ -455,17 +510,18 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
     );
   }
 
-  Color _resolveStatusColor(LeaveStatus status) {
+  String _statusSentenceCase(LeaveStatus status) {
     switch (status) {
       case LeaveStatus.approved:
-        return Colors.green.shade700;
+        return 'Approved';
       case LeaveStatus.rejected:
-        return Colors.red.shade700;
+        return 'Rejected';
       case LeaveStatus.pending:
-        return Colors.orange.shade800;
+        return 'Pending';
       case LeaveStatus.withdrawn:
+        return 'Withdrawn';
       case LeaveStatus.unknown:
-        return Colors.grey.shade700;
+        return 'All';
     }
   }
 
@@ -474,7 +530,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         return Padding(
@@ -483,17 +539,30 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.borderHover,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Leave Details',
-                    style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    'Leave details',
+                    style: GoogleFonts.instrumentSerif(
+                      fontSize: 22,
+                      fontWeight: FontWeight.normal,
+                      color: AppColors.ink,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const Icon(Icons.close_rounded, size: 20),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
@@ -501,20 +570,20 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
               const Divider(),
               const SizedBox(height: 8),
               if (item.applicantName.isNotEmpty)
-                _detailRow('Applicant Name', item.applicantName),
+                _detailRow('Applicant name', item.applicantName),
               if (item.studentId != null && item.studentId!.isNotEmpty)
                 _detailRow('Student ID', item.studentId!),
               if (item.roleOrClass.isNotEmpty)
-                _detailRow('Role / Class', item.roleOrClass),
-              _detailRow('Leave Type', item.leaveType),
-              _detailRow('Status', item.status.displayName),
+                _detailRow('Class / Section', item.roleOrClass),
+              _detailRow('Leave type', item.leaveType),
+              _detailRow('Status', _statusSentenceCase(item.status)),
               _detailRow(
                 'Duration',
                 '${item.startDate} to ${item.endDate} (${item.totalDays} days)',
               ),
-              _detailRow('Reason / Description', item.description),
+              _detailRow('Reason / description', item.description),
               if (item.reviewReason != null && item.reviewReason!.isNotEmpty)
-                _detailRow('Review Reason', item.reviewReason!),
+                _detailRow('Review remark', item.reviewReason!),
               const SizedBox(height: 16),
             ],
           ),
@@ -529,11 +598,18 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(
+            label,
+            style: GoogleFonts.poppins(fontSize: 11, color: AppColors.inkMuted),
+          ),
           const SizedBox(height: 2),
           Text(
             value.isNotEmpty ? value : 'None',
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.ink,
+            ),
           ),
         ],
       ),
@@ -544,9 +620,13 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Withdraw Leave Application'),
-        content: const Text(
+        title: Text(
+          'Withdraw leave application',
+          style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.ink),
+        ),
+        content: Text(
           'Are you sure you want to withdraw this pending leave application?',
+          style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkSecondary),
         ),
         actions: [
           TextButton(
@@ -554,7 +634,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
             child: const Text('Cancel'),
           ),
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () async {
               Navigator.pop(ctx);
               try {
@@ -570,9 +650,9 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed: $e')),
+                  );
                 }
               }
             },
@@ -585,26 +665,30 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
 
   void _updateStatusDialog(LeaveItemModel item, String newStatus) {
     final reasonController = TextEditingController();
+    final isApprove = newStatus == 'APPROVED';
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(
-          '${newStatus == 'APPROVED' ? 'Approve' : 'Reject'} Student Leave',
+          '${isApprove ? 'Approve' : 'Reject'} student leave',
+          style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.ink),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Provide a reason for ${newStatus.toLowerCase()}ing this request:',
+              'Provide a reason for ${isApprove ? 'approving' : 'rejecting'} this request:',
+              style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkSecondary),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: reasonController,
               decoration: InputDecoration(
-                hintText: newStatus == 'APPROVED'
+                hintText: isApprove
                     ? 'Approved as requested.'
-                    : 'Exam dates clash with the requested dates.',
-                border: const OutlineInputBorder(),
+                    : 'Exam dates clash with requested absence.',
               ),
             ),
           ],
@@ -615,11 +699,14 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: isApprove ? AppColors.success : AppColors.danger,
+            ),
             onPressed: () async {
               final reason = reasonController.text.trim().isEmpty
-                  ? (newStatus == 'APPROVED'
+                  ? (isApprove
                         ? 'Approved as requested.'
-                        : 'Exam dates clash with the requested dates.')
+                        : 'Exam dates clash with requested absence.')
                   : reasonController.text.trim();
               Navigator.pop(ctx);
 
@@ -633,21 +720,21 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Leave request $newStatus successfully.'),
-                      backgroundColor: Colors.green.shade700,
+                      content: Text('Leave request ${isApprove ? 'approved' : 'rejected'} successfully.'),
+                      backgroundColor: isApprove ? AppColors.success : AppColors.danger,
                     ),
                   );
                   _loadLeaves(page: 1);
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('Failed: $e')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed: $e')),
+                  );
                 }
               }
             },
-            child: Text(newStatus == 'APPROVED' ? 'Approve' : 'Reject'),
+            child: Text(isApprove ? 'Approve' : 'Reject'),
           ),
         ],
       ),
@@ -664,7 +751,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         return StatefulBuilder(
@@ -672,27 +759,40 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
             final dateFormat = DateFormat('yyyy-MM-dd');
             return Padding(
               padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 24,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
               ),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.borderHover,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
-                      'Apply for Teacher Leave',
-                      style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      'Apply for leave',
+                      style: GoogleFonts.instrumentSerif(
+                        fontSize: 24,
+                        fontWeight: FontWeight.normal,
+                        color: AppColors.ink,
                       ),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       initialValue: leaveTypeController.text,
                       decoration: const InputDecoration(
-                        labelText: 'Leave Type',
+                        labelText: 'Leave type',
                       ),
                       items: const [
                         DropdownMenuItem(
@@ -721,7 +821,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            icon: const Icon(Icons.date_range, size: 18),
+                            icon: const Icon(Icons.date_range_rounded, size: 16),
                             label: Text(dateFormat.format(startDate)),
                             onPressed: () async {
                               final picked = await showDatePicker(
@@ -746,7 +846,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton.icon(
-                            icon: const Icon(Icons.date_range, size: 18),
+                            icon: const Icon(Icons.date_range_rounded, size: 16),
                             label: Text(dateFormat.format(endDate)),
                             onPressed: () async {
                               final picked = await showDatePicker(
@@ -772,7 +872,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                       controller: descController,
                       maxLines: 3,
                       decoration: const InputDecoration(
-                        labelText: 'Reason / Description',
+                        labelText: 'Reason / description',
                         hintText: 'Explain the reason for requesting leave...',
                       ),
                     ),
@@ -815,7 +915,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                           }
                         }
                       },
-                      child: const Text('Submit Application'),
+                      child: const Text('Submit application'),
                     ),
                   ],
                 ),

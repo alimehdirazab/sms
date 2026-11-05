@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../bloc/parent_bloc.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_status_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/error_widget.dart';
@@ -13,7 +15,7 @@ import '../../shared/widgets/stat_card.dart';
 
 /// Parent-facing fee screen: shows outstanding dues, school bank account
 /// details, and the history of submitted payments with their verification
-/// status. Tapping "Pay Now" opens the payment sheet.
+/// status. Aligned with DESIGN.md Quiet Editorial Luxury.
 class ParentFeesScreen extends StatefulWidget {
   const ParentFeesScreen({super.key});
 
@@ -35,7 +37,18 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Fees & Payments')),
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(
+        title: Text(
+          'Fees & payments',
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
+      ),
       body: BlocBuilder<ParentBloc, ParentState>(
         buildWhen: (_, state) =>
             state is ParentProfileLoaded ||
@@ -64,23 +77,48 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
               children: [
                 if (profile.children.length > 1)
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
-                    child: SizedBox(
-                      height: 44,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Container(
+                      height: 40,
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceInset,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(color: AppColors.border, width: 1),
+                      ),
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: profile.children.length,
-                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        separatorBuilder: (_, _) => const SizedBox(width: 4),
                         itemBuilder: (context, index) {
                           final c = profile.children[index];
-                          return ChoiceChip(
-                            label: Text(c.name),
-                            selected: index == state.selectedChildIndex,
-                            onSelected: (_) {
+                          final isSelected = index == state.selectedChildIndex;
+                          return GestureDetector(
+                            onTap: () {
                               context.read<ParentBloc>().add(SelectChild(index));
                               _loadFees(c);
                             },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppColors.surface : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                border: isSelected
+                                    ? Border.all(color: AppColors.border, width: 1)
+                                    : null,
+                                boxShadow: isSelected ? AppShadows.subtle : null,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  c.name,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                    color: isSelected ? AppColors.accent : AppColors.inkMuted,
+                                  ),
+                                ),
+                              ),
+                            ),
                           );
                         },
                       ),
@@ -99,11 +137,15 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
                               'Payment submitted. Status: ${state.payment.status.label}. '
                               'It will update after verification.',
                             ),
+                            backgroundColor: AppColors.accent,
                           ),
                         );
                       } else if (state is ParentFeesError) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(state.message)),
+                          SnackBar(
+                            content: Text(state.message),
+                            backgroundColor: AppColors.danger,
+                          ),
                         );
                       }
                     },
@@ -125,6 +167,7 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
                       }
                       if (state is ParentFeesLoaded) {
                         return RefreshIndicator(
+                          color: AppColors.accent,
                           onRefresh: () async => _loadFees(child),
                           child: SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -135,11 +178,12 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
                                 _buildOutstandingSummary(state),
                                 const SizedBox(height: 20),
                                 Text(
-                                  'Fee Dues',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                  'Fee dues',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.ink,
+                                  ),
                                 ),
                                 const SizedBox(height: 10),
                                 ...state.fees.map(
@@ -156,17 +200,26 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
                                 ),
                                 const SizedBox(height: 20),
                                 Text(
-                                  'Payment History',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                  'Payment history',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.ink,
+                                  ),
                                 ),
                                 const SizedBox(height: 10),
                                 if (state.payments.isEmpty)
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 12),
-                                    child: Text('No payments submitted yet.'),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    child: Center(
+                                      child: Text(
+                                        'No payments submitted yet.',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 13,
+                                          color: AppColors.inkMuted,
+                                        ),
+                                      ),
+                                    ),
                                   )
                                 else
                                   ...state.payments.map(
@@ -201,19 +254,19 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
       children: [
         Expanded(
           child: StatCard(
-            label: 'Total Due',
-            value: '₹${outstanding.toStringAsFixed(0)}',
-            icon: Icons.account_balance_wallet,
+            label: 'Total outstanding',
+            value: 'Rs. ${outstanding.toStringAsFixed(0)}',
+            icon: Icons.account_balance_wallet_outlined,
             color: outstanding > 0 ? status.danger : status.success,
-            caption: outstanding > 0 ? 'Please pay' : 'All clear',
+            caption: outstanding > 0 ? 'Dues pending payment' : 'All clear',
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Expanded(
           child: StatCard(
-            label: 'Pending',
+            label: 'Pending audit',
             value: '$pendingCount',
-            icon: Icons.hourglass_top,
+            icon: Icons.hourglass_top_rounded,
             color: status.warning,
             caption: 'Awaiting verification',
           ),
@@ -231,7 +284,9 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (_) => BlocProvider.value(
         value: context.read<ParentBloc>(),
         child: _FeePaymentSheet(
@@ -252,124 +307,126 @@ class _FeeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = AppStatusColors.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    final Color color;
     final String badge;
+    final String kind;
     if (fee.isFullyPaid) {
-      color = status.success;
       badge = 'Paid';
+      kind = 'success';
     } else if (fee.isOverdue) {
-      color = status.danger;
       badge = 'Overdue';
+      kind = 'danger';
     } else {
-      color = status.warning;
       badge = 'Due';
+      kind = 'warning';
     }
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.receipt_long, color: color),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
+        boxShadow: AppShadows.subtle,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceInset,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(color: AppColors.border, width: 1),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        fee.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                child: const Icon(Icons.receipt_long_outlined, color: AppColors.accent, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fee.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        fee.description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      fee.description,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.inkMuted,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                StatusPill(label: badge, color: color),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _amountColumn(
-                    context,
-                    'Amount',
-                    '₹${fee.amount.toStringAsFixed(0)}',
-                    colorScheme.onSurface,
-                    textTheme,
-                  ),
+              ),
+              const SizedBox(width: 8),
+              StatusPill.semantic(
+                context,
+                label: badge,
+                kind: kind,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _amountColumn(
+                  'Amount',
+                  'Rs. ${fee.amount.toStringAsFixed(0)}',
+                  AppColors.ink,
                 ),
-                Expanded(
-                  child: _amountColumn(
-                    context,
-                    'Balance',
-                    '₹${fee.balance.toStringAsFixed(0)}',
-                    color,
-                    textTheme,
-                  ),
+              ),
+              Expanded(
+                child: _amountColumn(
+                  'Balance',
+                  'Rs. ${fee.balance.toStringAsFixed(0)}',
+                  fee.balance > 0 ? AppColors.danger : AppColors.success,
                 ),
-                Expanded(
-                  child: _amountColumn(
-                    context,
-                    'Due Date',
-                    DateFormatter.formatShortDate(fee.dueDate),
-                    fee.isOverdue ? status.danger : colorScheme.onSurface,
-                    textTheme,
-                  ),
-                ),
-              ],
-            ),
-            if (onPay != null) ...[
-              const SizedBox(height: 14),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: onPay,
-                  icon: const Icon(Icons.payments_outlined, size: 20),
-                  label: const Text('Pay Now'),
+              ),
+              Expanded(
+                child: _amountColumn(
+                  'Due date',
+                  DateFormatter.formatShortDate(fee.dueDate),
+                  fee.isOverdue ? AppColors.danger : AppColors.inkSecondary,
                 ),
               ),
             ],
+          ),
+          if (onPay != null) ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: FilledButton.icon(
+                onPressed: onPay,
+                icon: const Icon(Icons.payments_outlined, size: 18),
+                label: const Text('Pay now'),
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _amountColumn(
-    BuildContext context,
     String label,
     String value,
     Color color,
-    TextTheme textTheme,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -378,8 +435,9 @@ class _FeeCard extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          style: GoogleFonts.poppins(
+            fontSize: 11,
+            color: AppColors.inkMuted,
           ),
         ),
         const SizedBox(height: 3),
@@ -387,8 +445,9 @@ class _FeeCard extends StatelessWidget {
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
             color: color,
           ),
         ),
@@ -397,8 +456,6 @@ class _FeeCard extends StatelessWidget {
   }
 }
 
-/// Bottom sheet that shows the school account details and lets the parent
-/// attach a screenshot of the transfer, then submit for verification.
 class _FeePaymentSheet extends StatefulWidget {
   final StudentModel child;
   final FeeModel fee;
@@ -434,10 +491,10 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
 
   void _attachScreenshot() {
     setState(() {
-      _screenshotName = 'payment_screenshot_${DateTime.now().second}.png';
+      _screenshotName = 'deposit_slip_${DateTime.now().second}.png';
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Mock screenshot attached.')),
+      const SnackBar(content: Text('Deposit slip screenshot attached.')),
     );
   }
 
@@ -474,9 +531,6 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final status = AppStatusColors.of(context);
     final isSubmitting =
         context.watch<ParentBloc>().state is ParentFeeSubmitting;
 
@@ -484,7 +538,7 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
-        top: 8,
+        top: 12,
         bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
       ),
       child: SingleChildScrollView(
@@ -492,29 +546,41 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderHover,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             Text(
               'Pay ${widget.fee.title}',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.instrumentSerif(
+                fontSize: 24,
+                fontWeight: FontWeight.normal,
+                color: AppColors.ink,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              'For ${widget.child.name} · Balance ₹${widget.fee.balance.toStringAsFixed(0)}',
-              style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+              'For ${widget.child.name} · Outstanding: Rs. ${widget.fee.balance.toStringAsFixed(0)}',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: AppColors.inkMuted,
               ),
             ),
             const SizedBox(height: 20),
 
-            // Step 1: account details
-            _stepHeader('1', 'Transfer to the school account'),
+            _stepHeader('01', 'Transfer to school bank account'),
             const SizedBox(height: 10),
             _AccountDetailsCard(account: widget.account),
             const SizedBox(height: 20),
 
-            // Step 2: amount + reference + screenshot
-            _stepHeader('2', 'Enter details & attach screenshot'),
+            _stepHeader('02', 'Deposit details & screenshot receipt'),
             const SizedBox(height: 10),
             TextField(
               controller: _amountController,
@@ -524,47 +590,47 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
               ],
               decoration: const InputDecoration(
-                labelText: 'Amount paid (₹)',
-                prefixIcon: Icon(Icons.currency_rupee),
+                labelText: 'Amount paid (Rs.)',
+                prefixIcon: Icon(Icons.payments_outlined, size: 18),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _referenceController,
               decoration: const InputDecoration(
-                labelText: 'Transaction / Reference No. (optional)',
-                prefixIcon: Icon(Icons.confirmation_number_outlined),
+                labelText: 'Transaction / reference no. (optional)',
+                prefixIcon: Icon(Icons.confirmation_number_outlined, size: 18),
               ),
             ),
             const SizedBox(height: 12),
             InkWell(
               onTap: _attachScreenshot,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.md),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   border: Border.all(
                     color: _screenshotName == null
-                        ? colorScheme.outline.withValues(alpha: 0.6)
-                        : status.success,
-                    width: _screenshotName == null ? 1 : 1.5,
+                        ? AppColors.border
+                        : AppColors.successBorder,
+                    width: 1,
                   ),
                   color: _screenshotName == null
-                      ? colorScheme.surfaceContainerHighest
-                          .withValues(alpha: 0.3)
-                      : status.success.withValues(alpha: 0.08),
+                      ? AppColors.surfaceInset
+                      : AppColors.successBg,
                 ),
                 child: Row(
                   children: [
                     Icon(
                       _screenshotName == null
                           ? Icons.add_photo_alternate_outlined
-                          : Icons.image,
+                          : Icons.image_rounded,
                       color: _screenshotName == null
-                          ? colorScheme.primary
-                          : status.success,
+                          ? AppColors.accent
+                          : AppColors.success,
+                      size: 22,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -572,19 +638,22 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _screenshotName ?? 'Attach payment screenshot',
+                            _screenshotName ?? 'Attach payment deposit receipt',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: textTheme.bodyMedium?.copyWith(
+                            style: GoogleFonts.poppins(
                               fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: AppColors.ink,
                             ),
                           ),
                           Text(
                             _screenshotName == null
-                                ? 'Required for verification'
-                                : 'Tap to replace',
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                                ? 'Screenshot required for accounts verification'
+                                : 'Tap to replace image',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: AppColors.inkMuted,
                             ),
                           ),
                         ],
@@ -592,7 +661,7 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
                     ),
                     if (_screenshotName != null)
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(Icons.close_rounded, size: 18),
                         onPressed: () =>
                             setState(() => _screenshotName = null),
                       ),
@@ -605,17 +674,18 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: status.info.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.accentTint,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(color: AppColors.infoBorder, width: 1),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.verified_user, size: 18, color: status.info),
+                  const Icon(Icons.verified_user_outlined, size: 18, color: AppColors.accent),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Your payment will be marked "Pending" until the school office verifies it.',
-                      style: textTheme.bodySmall,
+                      'Your payment will be marked "Pending" until verified by school finance.',
+                      style: GoogleFonts.poppins(fontSize: 12, color: AppColors.accent),
                     ),
                   ),
                 ],
@@ -625,17 +695,18 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
 
             SizedBox(
               width: double.infinity,
+              height: 48,
               child: FilledButton.icon(
                 onPressed: isSubmitting ? null : _submit,
                 icon: isSubmitting
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
-                    : const Icon(Icons.check_circle_outline),
+                    : const Icon(Icons.check_circle_outline_rounded, size: 18),
                 label: Text(
-                  isSubmitting ? 'Submitting...' : 'Submit Payment Details',
+                  isSubmitting ? 'Submitting...' : 'Submit payment slip',
                 ),
               ),
             ),
@@ -646,23 +717,23 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
   }
 
   Widget _stepHeader(String step, String title) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Container(
-          width: 24,
-          height: 24,
+          width: 26,
+          height: 26,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: colorScheme.primary,
-            shape: BoxShape.circle,
+            color: AppColors.accentTint,
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            border: Border.all(color: AppColors.infoBorder, width: 1),
           ),
           child: Text(
             step,
-            style: TextStyle(
-              color: colorScheme.onPrimary,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
+            style: GoogleFonts.poppins(
+              color: AppColors.accent,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -672,10 +743,11 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink,
+            ),
           ),
         ),
       ],
@@ -683,7 +755,6 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
   }
 }
 
-/// Displays the school's bank account details with copy-to-clipboard actions.
 class _AccountDetailsCard extends StatelessWidget {
   final SchoolAccountModel account;
 
@@ -691,25 +762,29 @@ class _AccountDetailsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      color: colorScheme.primaryContainer.withValues(alpha: 0.35),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _row(context, 'Account Name', account.accountName, copy: false),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Column(
+        children: [
+          _row(context, 'Account title', account.accountName, copy: false),
+          const Divider(height: 18),
+          _row(context, 'Account number / IBAN', account.accountNumber),
+          const Divider(height: 18),
+          _row(context, 'Bank', '${account.bankName} · ${account.branch}', copy: false),
+          if (account.ifscCode.isNotEmpty) ...[
             const Divider(height: 18),
-            _row(context, 'Account Number', account.accountNumber),
-            const Divider(height: 18),
-            _row(context, 'IFSC Code', account.ifscCode),
-            const Divider(height: 18),
-            _row(context, 'Bank', '${account.bankName} · ${account.branch}',
-                copy: false),
-            const Divider(height: 18),
-            _row(context, 'UPI ID', account.upiId),
+            _row(context, 'Branch code', account.ifscCode),
           ],
-        ),
+          if (account.upiId.isNotEmpty) ...[
+            const Divider(height: 18),
+            _row(context, 'Reference / UPI ID', account.upiId),
+          ],
+        ],
       ),
     );
   }
@@ -720,7 +795,6 @@ class _AccountDetailsCard extends StatelessWidget {
     String value, {
     bool copy = true,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Expanded(
@@ -729,30 +803,33 @@ class _AccountDetailsCard extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: AppColors.inkMuted,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: AppColors.ink,
+                ),
               ),
             ],
           ),
         ),
         if (copy)
           IconButton(
-            icon: const Icon(Icons.copy, size: 18),
+            icon: const Icon(Icons.copy_rounded, size: 16, color: AppColors.inkSecondary),
             tooltip: 'Copy',
             onPressed: () {
               Clipboard.setData(ClipboardData(text: value));
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('$label copied')),
+                SnackBar(content: Text('$label copied to clipboard')),
               );
             },
           ),
@@ -768,119 +845,110 @@ class _PaymentHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = AppStatusColors.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final (kind, icon) = switch (payment.status) {
+      FeePaymentStatus.verified => ('success', Icons.verified_outlined),
+      FeePaymentStatus.rejected => ('danger', Icons.highlight_off_rounded),
+      FeePaymentStatus.pending => ('warning', Icons.hourglass_top_rounded),
+    };
 
-    final Color color;
-    final IconData icon;
-    switch (payment.status) {
-      case FeePaymentStatus.verified:
-        color = status.success;
-        icon = Icons.verified;
-        break;
-      case FeePaymentStatus.rejected:
-        color = status.danger;
-        icon = Icons.cancel;
-        break;
-      case FeePaymentStatus.pending:
-        color = status.warning;
-        icon = Icons.hourglass_top;
-        break;
-    }
-
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: color, size: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
+        boxShadow: AppShadows.subtle,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceInset,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(color: AppColors.border, width: 1),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '₹${payment.amount.toStringAsFixed(0)}',
-                        style: textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                child: Icon(icon, color: AppColors.inkSecondary, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Rs. ${payment.amount.toStringAsFixed(0)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
                       ),
-                      Text(
-                        'Submitted ${DateFormatter.formatDateTime(payment.submittedOn)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                    ),
+                    Text(
+                      'Submitted ${DateFormatter.formatDateTime(payment.submittedOn)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: AppColors.inkMuted,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                StatusPill(
-                  label: payment.status == FeePaymentStatus.pending
-                      ? 'Pending'
-                      : payment.status.label,
-                  color: color,
-                ),
-              ],
-            ),
+              ),
+              StatusPill.semantic(
+                context,
+                label: payment.status == FeePaymentStatus.pending
+                    ? 'Pending verification'
+                    : (payment.status == FeePaymentStatus.verified ? 'Verified' : 'Rejected'),
+                kind: kind,
+              ),
+            ],
+          ),
+          if (payment.referenceNumber != null || payment.screenshotName != null) ...[
             const SizedBox(height: 8),
             Wrap(
               spacing: 12,
               runSpacing: 4,
               children: [
                 if (payment.referenceNumber != null)
-                  _meta(textTheme, colorScheme, Icons.confirmation_number,
-                      payment.referenceNumber!),
+                  _meta(Icons.confirmation_number_outlined, payment.referenceNumber!),
                 if (payment.screenshotName != null)
-                  _meta(textTheme, colorScheme, Icons.image,
-                      payment.screenshotName!),
+                  _meta(Icons.image_outlined, payment.screenshotName!),
               ],
             ),
-            if (payment.verificationRemarks != null &&
-                payment.verificationRemarks!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Office: ${payment.verificationRemarks}',
-                  style: textTheme.bodySmall,
-                ),
-              ),
-            ],
           ],
-        ),
+          if (payment.verificationRemarks != null &&
+              payment.verificationRemarks!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceInset,
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+                border: Border.all(color: AppColors.border, width: 1),
+              ),
+              child: Text(
+                'Accounts remark: ${payment.verificationRemarks}',
+                style: GoogleFonts.poppins(fontSize: 11, color: AppColors.inkSecondary),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _meta(
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-    IconData icon,
-    String label,
-  ) {
+  Widget _meta(IconData icon, String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: colorScheme.onSurfaceVariant),
+        Icon(icon, size: 13, color: AppColors.inkMuted),
         const SizedBox(width: 4),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 170),
@@ -888,8 +956,9 @@ class _PaymentHistoryCard extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              color: AppColors.inkMuted,
             ),
           ),
         ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../bloc/parent_bloc.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_status_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/error_widget.dart';
@@ -40,15 +42,22 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Parent Dashboard'),
+        title: Text(
+          'Parent dashboard',
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
         actions: [
           IconButton(
-            tooltip: 'Leave Applications',
-            icon: const Icon(Icons.event_note),
+            tooltip: 'Leave applications',
+            icon: const Icon(Icons.event_note_rounded, size: 20),
             onPressed: () => context.pushNamed(RouteNames.parentLeave),
           ),
         ],
@@ -78,6 +87,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             });
 
             return RefreshIndicator(
+              color: AppColors.accent,
               onRefresh: () async {
                 context.read<ParentBloc>().add(LoadParentProfile());
                 context.read<ParentBloc>().add(LoadAcademicCalendar());
@@ -85,32 +95,44 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${DateFormatter.getGreeting()}, ${profile.name.split(' ').first}!',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                      '${DateFormatter.getGreeting()},',
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: AppColors.inkMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      profile.name.split(' ').first,
+                      style: GoogleFonts.instrumentSerif(
+                        fontSize: 26,
+                        fontWeight: FontWeight.normal,
+                        color: AppColors.ink,
+                        letterSpacing: -0.02 * 26,
+                      ),
                     ),
                     const SizedBox(height: 16),
 
                     if (profile.children.isNotEmpty) ...[
                       _buildChildSwitcher(state),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                     ],
 
                     Text(
                       'Showing data for: ${selectedChild.name} · ${selectedChild.className}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.inkMuted,
+                      ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
 
                     _buildQuickActions(),
                     const SizedBox(height: 18),
@@ -121,10 +143,10 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                     _buildProgressSection(),
                     const SizedBox(height: 18),
 
-                    _buildAttendanceCard(colorScheme),
+                    _buildAttendanceCard(),
                     const SizedBox(height: 16),
 
-                    _buildRecentMarks(colorScheme),
+                    _buildRecentMarks(),
                     const SizedBox(height: 16),
 
                     _buildUpcomingExams(),
@@ -134,6 +156,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                     const SizedBox(height: 16),
 
                     _buildFeeAlert(),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -146,22 +169,49 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
   }
 
   Widget _buildChildSwitcher(ParentProfileLoaded state) {
-    return SizedBox(
-      height: 44,
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceInset,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: state.profile.children.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 4),
         itemBuilder: (context, index) {
           final child = state.profile.children[index];
+          final isSelected = index == state.selectedChildIndex;
           final classDisplay = child.className.isNotEmpty ? ' (${child.className})' : '';
-          return ChoiceChip(
-            label: Text('${child.name}$classDisplay'),
-            selected: index == state.selectedChildIndex,
-            onSelected: (_) {
+
+          return GestureDetector(
+            onTap: () {
               context.read<ParentBloc>().add(SelectChild(index));
               _loadChildData(child.id);
             },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.surface : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                border: isSelected
+                    ? Border.all(color: AppColors.border, width: 1)
+                    : null,
+                boxShadow: isSelected ? AppShadows.subtle : null,
+              ),
+              child: Center(
+                child: Text(
+                  '${child.name}$classDisplay',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    color: isSelected ? AppColors.accent : AppColors.inkMuted,
+                  ),
+                ),
+              ),
+            ),
           );
         },
       ),
@@ -169,14 +219,12 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
   }
 
   Widget _buildQuickActions() {
-    final status = AppStatusColors.of(context);
     return Row(
       children: [
         Expanded(
           child: _QuickAction(
-            icon: Icons.event_available,
-            label: 'Apply Leave',
-            color: status.info,
+            icon: Icons.event_available_outlined,
+            label: 'Apply leave',
             onTap: () => context.pushNamed(RouteNames.parentLeave),
           ),
         ),
@@ -184,17 +232,15 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
         Expanded(
           child: _QuickAction(
             icon: Icons.payments_outlined,
-            label: 'Pay Fees',
-            color: status.warning,
+            label: 'Pay fees',
             onTap: () => context.pushNamed(RouteNames.parentFees),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: _QuickAction(
-            icon: Icons.calendar_month,
+            icon: Icons.calendar_month_outlined,
             label: 'Calendar',
-            color: status.success,
             onTap: () => context.pushNamed(RouteNames.parentCalendar),
           ),
         ),
@@ -218,19 +264,20 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                 label: 'Attendance',
                 value: '${a.attendancePercentage.toStringAsFixed(0)}%',
                 icon: Icons.fact_check_outlined,
-                color:
-                    a.attendancePercentage >= 75 ? status.success : status.danger,
-                caption: '${a.attendancePresent}/${a.attendanceTotal} days',
+                color: a.attendancePercentage >= 75
+                    ? status.success
+                    : status.danger,
+                caption: '${a.attendancePresent}/${a.attendanceTotal} days present',
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             Expanded(
               child: StatCard(
-                label: 'Average',
+                label: 'Class average',
                 value: '${a.averagePercentage.toStringAsFixed(1)}%',
-                icon: Icons.trending_up,
+                icon: Icons.trending_up_rounded,
                 color: status.info,
-                caption: 'Grade ${a.overallGrade}',
+                caption: 'Overall grade: ${a.overallGrade}',
               ),
             ),
           ],
@@ -249,135 +296,147 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
         final a = state.analytics;
         final status = AppStatusColors.of(context);
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      Icons.insights,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Progress Overview',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border, width: 1),
+            boxShadow: AppShadows.subtle,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.insights_rounded,
+                    size: 18,
+                    color: AppColors.accent,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Progress overview',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
                       ),
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ProgressStatBar(
+                label: 'Attendance this month',
+                percentage: a.attendancePercentage,
+                color: a.attendancePercentage >= 75
+                    ? status.success
+                    : status.danger,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Marks trajectory by exam',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: AppColors.inkMuted,
                 ),
-                const SizedBox(height: 14),
-                ProgressStatBar(
-                  label: 'Attendance this month',
-                  percentage: a.attendancePercentage,
-                  color: a.attendancePercentage >= 75
-                      ? status.success
-                      : status.danger,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Marks trend by exam',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                MiniBarChart(
-                  labels: a.examLabels,
-                  values: a.examPercentages,
-                  color: Theme.of(context).colorScheme.primary,
-                  height: 150,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              MiniBarChart(
+                labels: a.examLabels,
+                values: a.examPercentages,
+                color: AppColors.accent,
+                height: 140,
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildAttendanceCard(ColorScheme colorScheme) {
+  Widget _buildAttendanceCard() {
     return BlocBuilder<ParentBloc, ParentState>(
       buildWhen: (_, state) =>
           state is ParentAttendanceLoaded || state is ParentAttendanceLoading,
       builder: (context, state) {
         if (state is ParentAttendanceLoading) {
-          return const ShimmerCard(height: 100);
+          return const ShimmerCard(height: 90);
         }
         if (state is ParentAttendanceLoaded) {
           final attendance = state.todayAttendance;
-          final color = _attendanceColor(attendance.status);
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      _attendanceIcon(attendance.status),
-                      color: color,
-                      size: 32,
-                    ),
+          final (icon, iconColor) = switch (attendance.status) {
+            AttendanceStatus.present => (Icons.check_circle_outline_rounded, AppColors.success),
+            AttendanceStatus.late => (Icons.access_time_rounded, AppColors.warning),
+            AttendanceStatus.absent => (Icons.highlight_off_rounded, AppColors.danger),
+          };
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border, width: 1),
+              boxShadow: AppShadows.subtle,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceInset,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    border: Border.all(color: AppColors.border, width: 1),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Today's Attendance",
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                  child: Icon(icon, color: iconColor, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Today's attendance",
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink,
                         ),
+                      ),
+                      const SizedBox(height: 2),
+                      StatusDot.semantic(
+                        context,
+                        label: _attendanceSentenceCase(attendance.status),
+                        kind: attendance.status.name,
+                      ),
+                      if (attendance.checkInTime != null) ...[
                         const SizedBox(height: 4),
                         Text(
-                          attendance.status.name.toUpperCase(),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: color,
-                            fontSize: 16,
+                          'Checked in: ${DateFormatter.formatTime(attendance.checkInTime!)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            color: AppColors.inkMuted,
+                            fontSize: 12,
                           ),
                         ),
-                        if (attendance.checkInTime != null)
-                          Text(
-                            'Check-in: ${DateFormatter.formatTime(attendance.checkInTime!)}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
-                              fontSize: 13,
-                            ),
-                          ),
                       ],
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         }
-        return const ShimmerCard(height: 100);
+        return const ShimmerCard(height: 90);
       },
     );
   }
 
-  Widget _buildRecentMarks(ColorScheme colorScheme) {
+  Widget _buildRecentMarks() {
     return BlocBuilder<ParentBloc, ParentState>(
       buildWhen: (_, state) => state is ParentMarksLoaded,
       builder: (context, state) {
@@ -387,62 +446,75 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
           final avgPercentage =
               latestMarks.fold<double>(0, (sum, m) => sum + m.percentage) /
                   latestMarks.length;
-          final status = AppStatusColors.of(context);
 
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Recent Marks',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border, width: 1),
+              boxShadow: AppShadows.subtle,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Recent marks',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink,
                         ),
                       ),
-                      StatusPill(
-                        label: '${avgPercentage.toStringAsFixed(1)}%',
-                        color: colorScheme.primary,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ...latestMarks.map(
-                    (m) => Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              m.examId,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 13),
+                    ),
+                    StatusPill.semantic(
+                      context,
+                      label: 'Avg: ${avgPercentage.toStringAsFixed(1)}%',
+                      kind: 'info',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ...latestMarks.map(
+                  (m) => Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            m.examId,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: AppColors.ink,
                             ),
                           ),
-                          Text(
-                            '${m.percentage.toStringAsFixed(1)}%',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: m.percentage >= 40
-                                  ? status.success
-                                  : status.danger,
-                            ),
+                        ),
+                        Text(
+                          '${m.percentage.toStringAsFixed(1)}%',
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: m.percentage >= 40
+                                ? AppColors.success
+                                : AppColors.danger,
                           ),
-                          const SizedBox(width: 8),
-                          StatusPill(label: m.grade, color: colorScheme.primary),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 8),
+                        StatusPill.semantic(
+                          context,
+                          label: m.grade,
+                          kind: m.percentage >= 40 ? 'success' : 'danger',
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         }
@@ -457,48 +529,53 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
       builder: (context, state) {
         if (state is ParentUpcomingExamsLoaded) {
           if (state.exams.isEmpty) return const SizedBox.shrink();
-          final warning = AppStatusColors.of(context).warning;
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Upcoming Exams',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border, width: 1),
+              boxShadow: AppShadows.subtle,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Upcoming exams',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
                   ),
-                  const SizedBox(height: 8),
-                  ...state.exams.map(
-                    (exam) => ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: warning.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(Icons.quiz, color: warning),
+                ),
+                const SizedBox(height: 10),
+                ...state.exams.map(
+                  (exam) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.warningBg,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(color: AppColors.warningBorder, width: 1),
                       ),
-                      title: Text(
-                        exam.subjectName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      subtitle: Text(
-                        DateFormatter.formatDate(exam.date),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      dense: true,
+                      child: const Icon(Icons.quiz_outlined, color: AppColors.warning, size: 18),
                     ),
+                    title: Text(
+                      exam.subjectName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.ink),
+                    ),
+                    subtitle: Text(
+                      DateFormatter.formatDate(exam.date),
+                      style: GoogleFonts.poppins(fontSize: 12, color: AppColors.inkMuted),
+                    ),
+                    dense: true,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         }
@@ -522,39 +599,44 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             ? upcoming
             : state.events.take(3).toList();
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Academic Calendar',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border, width: 1),
+            boxShadow: AppShadows.subtle,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Academic calendar',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () =>
-                          context.pushNamed(RouteNames.parentCalendar),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: const Size(0, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text('View All'),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        context.pushNamed(RouteNames.parentCalendar),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ...toShow.map((e) => CalendarEventTile(event: e, dense: true)),
-              ],
-            ),
+                    child: const Text('View all'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...toShow.map((e) => CalendarEventTile(event: e, dense: true)),
+            ],
           ),
         );
       },
@@ -571,123 +653,127 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
         final outstanding = state.totalOutstanding;
         final pendingPayments =
             state.payments.where((p) => p.status.name == 'pending').toList();
-        final status = AppStatusColors.of(context);
         final isClear = outstanding <= 0;
 
-        return Card(
-          color: (isClear ? status.success : status.danger).withValues(
-            alpha: 0.06,
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: isClear ? AppColors.successBorder : AppColors.warningBorder,
+              width: 1,
+            ),
+            boxShadow: AppShadows.subtle,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      isClear ? Icons.check_circle : Icons.warning_amber,
-                      color: isClear ? status.success : status.danger,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            isClear ? 'No Dues' : 'Fee Due Alert',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            isClear
-                                ? 'All fees are paid. Thank you!'
-                                : '₹${outstanding.toStringAsFixed(0)} outstanding',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (!isClear)
-                      FilledButton(
-                        onPressed: () =>
-                            context.pushNamed(RouteNames.parentFees),
-                        child: const Text('Pay Now'),
-                      ),
-                  ],
-                ),
-                if (pendingPayments.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: status.warning.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isClear ? Icons.check_circle_outline_rounded : Icons.warning_amber_rounded,
+                    color: isClear ? AppColors.success : AppColors.warning,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.hourglass_top,
-                          size: 18,
-                          color: status.warning,
+                        Text(
+                          isClear ? 'All dues settled' : 'Fee due alert',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: AppColors.ink,
+                          ),
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            '${pendingPayments.length} payment(s) pending verification by the school office.',
-                            style: const TextStyle(fontSize: 12),
+                        const SizedBox(height: 2),
+                        Text(
+                          isClear
+                              ? 'All tuition fees are paid. Thank you!'
+                              : 'Rs. ${outstanding.toStringAsFixed(0)} outstanding',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: AppColors.inkMuted,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  if (!isClear)
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        minimumSize: const Size(0, 36),
+                      ),
+                      onPressed: () =>
+                          context.pushNamed(RouteNames.parentFees),
+                      child: const Text('Pay now'),
+                    ),
                 ],
+              ),
+              if (pendingPayments.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.warningBg,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    border: Border.all(color: AppColors.warningBorder, width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.hourglass_top_rounded,
+                        size: 16,
+                        color: AppColors.warning,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '${pendingPayments.length} payment(s) pending verification by accounts office.',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.warning,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
-            ),
+            ],
           ),
         );
       },
     );
   }
 
-  Color _attendanceColor(AttendanceStatus status) {
-    final colors = AppStatusColors.of(context);
+  String _attendanceSentenceCase(AttendanceStatus status) {
     switch (status) {
       case AttendanceStatus.present:
-        return colors.success;
+        return 'Present';
       case AttendanceStatus.late:
-        return colors.warning;
+        return 'Late';
       case AttendanceStatus.absent:
-        return colors.danger;
-    }
-  }
-
-  IconData _attendanceIcon(AttendanceStatus status) {
-    switch (status) {
-      case AttendanceStatus.present:
-        return Icons.check_circle;
-      case AttendanceStatus.late:
-        return Icons.warning_amber;
-      case AttendanceStatus.absent:
-        return Icons.cancel;
+        return 'Absent';
     }
   }
 }
 
-/// Small tappable action tile used in the dashboard quick-actions row.
 class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
   final VoidCallback onTap;
 
   const _QuickAction({
     required this.icon,
     required this.label,
-    required this.color,
     required this.onTap,
   });
 
@@ -695,25 +781,37 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(14),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border, width: 1),
+          boxShadow: AppShadows.subtle,
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 6),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.accentTint,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(color: AppColors.infoBorder, width: 1),
+              ),
+              child: Icon(icon, color: AppColors.accent, size: 18),
+            ),
+            const SizedBox(height: 8),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
+                fontWeight: FontWeight.w500,
+                color: AppColors.ink,
               ),
             ),
           ],

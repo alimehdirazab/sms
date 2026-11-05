@@ -1,10 +1,10 @@
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../core/theme/app_colors.dart';
 
-/// A lightweight, dependency-free mini bar chart used to visualise progress
-/// series (e.g. marks percentage across exams, weekly attendance). Provides its
-/// own value labels and remains overflow-safe inside any Column/Card.
+/// A lightweight mini bar chart used to visualise progress series
+/// Aligned with DESIGN.md Section 8.3.
 class MiniBarChart extends StatelessWidget {
   /// Labels for each bar, shown under the bar.
   final List<String> labels;
@@ -29,17 +29,16 @@ class MiniBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     if (values.isEmpty) {
       return SizedBox(
         height: height,
         child: Center(
           child: Text(
             'Not enough data yet.',
-            style: textTheme.bodySmall
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: AppColors.inkMuted,
+            ),
           ),
         ),
       );
@@ -65,31 +64,32 @@ class MiniBarChart extends StatelessWidget {
                     '${safeValue.toStringAsFixed(0)}$valueSuffix',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: color,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0, end: ratio),
                     duration: const Duration(milliseconds: 650),
                     curve: Curves.easeOutCubic,
                     builder: (context, value, _) {
                       return Container(
-                        height: math.max(6, value * (height - 44)),
+                        height: math.max(6, value * (height - 48)),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                             colors: [
                               color,
-                              color.withValues(alpha: 0.55),
+                              color.withValues(alpha: 0.70),
                             ],
                           ),
                           borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(8),
-                            bottom: Radius.circular(4),
+                            top: Radius.circular(6),
+                            bottom: Radius.circular(3),
                           ),
                         ),
                       );
@@ -101,8 +101,10 @@ class MiniBarChart extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,
-                    style: textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.normal,
+                      color: AppColors.inkMuted,
                     ),
                   ),
                 ],
@@ -133,8 +135,6 @@ class ProgressStatBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
     final clamped = percentage.clamp(0, 100).toDouble() / 100;
 
     return Column(
@@ -147,15 +147,19 @@ class ProgressStatBar extends StatelessWidget {
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: textTheme.bodyMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.ink,
+                ),
               ),
             ),
             const SizedBox(width: 8),
             Text(
               trailingLabel ?? '${percentage.toStringAsFixed(1)}%',
-              style: textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w700,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
                 color: color,
               ),
             ),
@@ -163,7 +167,7 @@ class ProgressStatBar extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.xs),
           child: TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: clamped),
             duration: const Duration(milliseconds: 700),
@@ -171,8 +175,8 @@ class ProgressStatBar extends StatelessWidget {
             builder: (context, value, _) {
               return LinearProgressIndicator(
                 value: value,
-                minHeight: 8,
-                backgroundColor: colorScheme.surfaceContainerHighest,
+                minHeight: 7,
+                backgroundColor: AppColors.surfaceInset,
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               );
             },

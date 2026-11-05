@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../bloc/teacher_bloc.dart';
 import '../attendance/services/location_and_selfie_service.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_status_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/shimmer_loading.dart';
@@ -46,16 +48,24 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final now = DateTime.now();
 
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Teacher Dashboard'),
+        title: Text(
+          'Teacher dashboard',
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
         actions: [
           IconButton(
-            tooltip: 'Weekly Timetable',
-            icon: const Icon(Icons.calendar_view_week),
+            tooltip: 'Weekly timetable',
+            icon: const Icon(Icons.calendar_view_week_rounded, size: 20),
             onPressed: () =>
                 context.pushNamed(RouteNames.teacherWeeklySchedule),
           ),
@@ -65,28 +75,22 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               final count =
                   state is TeacherNotificationCountLoaded ? state.count : 0;
               return Stack(
+                alignment: Alignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.notifications_outlined),
+                    icon: const Icon(Icons.notifications_none_rounded, size: 20),
                     onPressed: () {},
                   ),
                   if (count > 0)
                     Positioned(
-                      right: 8,
-                      top: 8,
+                      right: 10,
+                      top: 12,
                       child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: colorScheme.error,
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.danger,
                           shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '$count',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
                         ),
                       ),
                     ),
@@ -97,14 +101,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         ],
       ),
       body: RefreshIndicator(
+        color: AppColors.accent,
         onRefresh: () async => _loadData(),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Greeting & Date
+              // Greeting & Date (Editorial Typography)
               BlocBuilder<TeacherBloc, TeacherState>(
                 buildWhen: (_, state) => state is TeacherProfileLoaded,
                 builder: (context, state) {
@@ -116,36 +121,42 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     children: [
                       Text(
                         '${DateFormatter.getGreeting()},',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.normal,
+                          color: AppColors.inkMuted,
+                        ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         name,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+                        style: GoogleFonts.instrumentSerif(
+                          fontSize: 26,
+                          fontWeight: FontWeight.normal,
+                          color: AppColors.ink,
+                          letterSpacing: -0.02 * 26,
+                        ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         '${DateFormatter.formatDay(now)}, ${DateFormatter.formatDate(now)}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: AppColors.accent,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   );
                 },
               ),
-              const SizedBox(height: 24),
-
-              // Check-in/out button
-              _buildCheckInOutSection(colorScheme),
               const SizedBox(height: 20),
 
-              // Quick actions
+              // Check-in/out verification card
+              _buildCheckInOutSection(),
+              const SizedBox(height: 18),
+
+              // Quick actions (White cards with hairline borders)
               _buildQuickActions(),
               const SizedBox(height: 20),
 
@@ -162,39 +173,42 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      "Today's Schedule",
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                      "Today's schedule",
+                      style: GoogleFonts.poppins(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
                     ),
                   ),
                   TextButton(
                     onPressed: () =>
                         context.pushNamed(RouteNames.teacherWeeklySchedule),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: const Size(0, 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: const Size(0, 28),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('Full Week'),
+                    child: const Text('Full week'),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               _buildScheduleSection(),
               const SizedBox(height: 20),
 
               // Recent Attendance
               Text(
-                'Recent Attendance',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                'Recent attendance',
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ink,
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
               _buildRecentAttendance(),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -203,32 +217,28 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   }
 
   Widget _buildQuickActions() {
-    final status = AppStatusColors.of(context);
     return Row(
       children: [
         Expanded(
           child: _QuickAction(
-            icon: Icons.event_available,
-            label: 'Apply Leave',
-            color: status.info,
+            icon: Icons.event_available_outlined,
+            label: 'Apply leave',
             onTap: () => context.pushNamed(RouteNames.teacherLeave),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: _QuickAction(
-            icon: Icons.calendar_view_week,
-            label: 'Week View',
-            color: status.success,
+            icon: Icons.calendar_view_week_outlined,
+            label: 'Weekly timetable',
             onTap: () => context.pushNamed(RouteNames.teacherWeeklySchedule),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: _QuickAction(
-            icon: Icons.calendar_month,
+            icon: Icons.calendar_month_outlined,
             label: 'Calendar',
-            color: status.warning,
             onTap: () => context.pushNamed(RouteNames.teacherCalendar),
           ),
         ),
@@ -245,7 +255,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         }
         final a = state.analytics;
         final status = AppStatusColors.of(context);
-        final colorScheme = Theme.of(context).colorScheme;
 
         return Column(
           children: [
@@ -253,7 +262,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               children: [
                 Expanded(
                   child: StatCard(
-                    label: 'My Attendance',
+                    label: 'My attendance',
                     value: '${a.attendancePercentage.toStringAsFixed(0)}%',
                     icon: Icons.fact_check_outlined,
                     color: a.attendancePercentage >= 85
@@ -262,70 +271,77 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     caption: '${a.presentDays} present · ${a.lateDays} late',
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: StatCard(
-                    label: 'Class Average',
+                    label: 'Class average',
                     value: '${a.classAverage.toStringAsFixed(1)}%',
                     icon: Icons.groups_outlined,
                     color: status.info,
-                    caption: 'Across my classes',
+                    caption: 'Across assigned classes',
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 14),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.bar_chart, size: 18, color: colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Attendance Chart',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(fontWeight: FontWeight.bold),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.border, width: 1),
+                boxShadow: AppShadows.subtle,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.bar_chart_rounded, size: 18, color: AppColors.accent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Attendance trajectory',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.ink,
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Daily presence over the last 6 working days',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.inkMuted,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Daily presence over the last 6 working days',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                  ),
+                  const SizedBox(height: 12),
+                  MiniBarChart(
+                    labels: a.weekdayLabels,
+                    values: a.weekdayAttendance,
+                    color: AppColors.accent,
+                    height: 150,
+                  ),
+                  const Divider(height: 28),
+                  Text(
+                    'Average marks by class',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.inkMuted,
                     ),
-                    const SizedBox(height: 10),
-                    MiniBarChart(
-                      labels: a.weekdayLabels,
-                      values: a.weekdayAttendance,
-                      color: colorScheme.primary,
-                      height: 150,
-                    ),
-                    const Divider(height: 28),
-                    Text(
-                      'Average marks by class',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    MiniBarChart(
-                      labels: a.subjectLabels,
-                      values: a.subjectAverages,
-                      color: status.info,
-                      height: 140,
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 8),
+                  MiniBarChart(
+                    labels: a.subjectLabels,
+                    values: a.subjectAverages,
+                    color: AppColors.accent,
+                    height: 140,
+                  ),
+                ],
               ),
             ),
           ],
@@ -349,60 +365,68 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             ? upcoming
             : state.events.take(3).toList();
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Academic Calendar',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border, width: 1),
+            boxShadow: AppShadows.subtle,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Academic calendar',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () =>
-                          context.pushNamed(RouteNames.teacherCalendar),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        minimumSize: const Size(0, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text('View All'),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        context.pushNamed(RouteNames.teacherCalendar),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: const Size(0, 28),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                ...toShow.map((e) => CalendarEventTile(event: e, dense: true)),
-              ],
-            ),
+                    child: const Text('View all'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...toShow.map((e) => CalendarEventTile(event: e, dense: true)),
+            ],
           ),
         );
       },
     );
   }
 
-  /// Prompts for an optional comment when a late check-in is detected.
   void _promptLateComment() {
     final controller = TextEditingController();
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Running Late?'),
+        title: Text(
+          'Running late?',
+          style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.ink),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'You are checking in late. Add a short comment for the record (optional).',
+              style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkSecondary),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             TextField(
               controller: controller,
               maxLines: 3,
@@ -428,7 +452,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               }
               Navigator.pop(ctx);
             },
-            child: const Text('Save Comment'),
+            child: const Text('Save comment'),
           ),
         ],
       ),
@@ -438,19 +462,22 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Future<void> _handleCheckInFlow() async {
     final locationService = LocationAndSelfieService();
 
-    // Show dialog explaining GPS and Selfie requirements
     final proceed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.camera_alt, color: Color(0xFFFF6F00)),
-            SizedBox(width: 8),
-            Text('Check-in Verification'),
+            const Icon(Icons.camera_alt_outlined, color: AppColors.accent, size: 22),
+            const SizedBox(width: 8),
+            Text(
+              'Check-in verification',
+              style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.ink),
+            ),
           ],
         ),
-        content: const Text(
+        content: Text(
           'To check in, the app will verify your real-time GPS location and require a selfie photo as proof of attendance.',
+          style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkSecondary),
         ),
         actions: [
           TextButton(
@@ -458,8 +485,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton.icon(
-            icon: const Icon(Icons.camera_front),
-            label: const Text('Take Selfie & Check In'),
+            icon: const Icon(Icons.camera_front_rounded, size: 16),
+            label: const Text('Take selfie & check in'),
             onPressed: () => Navigator.pop(ctx, true),
           ),
         ],
@@ -469,7 +496,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     if (proceed != true) return;
 
     try {
-      // 1. Capture selfie
       final File? selfieFile = await locationService.captureSelfie();
       if (selfieFile == null) {
         if (mounted) {
@@ -480,7 +506,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         return;
       }
 
-      // 2. Fetch real GPS coordinates
       final loc = await locationService.getCurrentRealLocation();
 
       if (!mounted) return;
@@ -498,7 +523,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: AppColors.danger,
           ),
         );
       }
@@ -522,14 +547,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst('Exception: ', '')),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: AppColors.danger,
           ),
         );
       }
     }
   }
 
-  Widget _buildCheckInOutSection(ColorScheme colorScheme) {
+  Widget _buildCheckInOutSection() {
     final status = AppStatusColors.of(context);
     return BlocConsumer<TeacherBloc, TeacherState>(
       listenWhen: (_, state) =>
@@ -545,13 +570,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           });
           final message = state.checkedIn
               ? (wasLate
-                  ? '⏰ Checked in (late). Please add a comment.'
-                  : '✅ Check-in successful! Verified & inside geofence.')
-              : '👋 Check-out successful!';
+                  ? 'Checked in (late). Please add a comment.'
+                  : 'Check-in successful! Verified inside campus.')
+              : 'Check-out successful!';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(message),
-              backgroundColor: colorScheme.primary,
+              backgroundColor: AppColors.accent,
             ),
           );
           if (state.checkedIn && wasLate) {
@@ -561,7 +586,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: colorScheme.error,
+              backgroundColor: AppColors.danger,
             ),
           );
         } else if (state is TeacherLateCommentSaved) {
@@ -574,85 +599,87 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         final isLoading = state is TeacherCheckInLoading;
         final geofenceInside = state is! TeacherCheckInError;
         final now = DateTime.now();
-        // A check-in after 08:30 is considered late (mock rule).
         final isLateNow = now.hour > 8 || (now.hour == 8 && now.minute > 30);
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: geofenceInside
-                            ? status.success
-                            : status.danger,
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border, width: 1),
+            boxShadow: AppShadows.subtle,
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: geofenceInside ? status.success : status.danger,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      geofenceInside ? 'Inside school zone' : 'Outside school zone',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: geofenceInside ? status.success : status.danger,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        geofenceInside
-                            ? 'Inside School Zone'
-                            : 'Outside School Zone',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: geofenceInside
-                              ? status.success
-                              : status.danger,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                  ),
+                  if (!_isCheckedIn && isLateNow)
+                    StatusDot(
+                      label: 'Late check-in',
+                      color: status.warning,
                     ),
-                    if (!_isCheckedIn && isLateNow)
-                      StatusPill(
-                        label: 'Late',
-                        color: status.warning,
-                        icon: Icons.schedule,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                AnimatedBouncyButton(
-                  label: isLoading
-                      ? 'Processing...'
-                      : (_isCheckedIn ? 'Check Out' : 'Check In'),
-                  icon: isLoading
-                      ? null
-                      : (_isCheckedIn ? Icons.logout : Icons.login),
-                  onPressed: isLoading
-                      ? null
-                      : () {
-                          if (_isCheckedIn) {
-                            _handleCheckOutFlow();
-                          } else {
-                            _pendingLateComment = isLateNow;
-                            _handleCheckInFlow();
-                          }
-                        },
-                  backgroundColor:
-                      _isCheckedIn ? colorScheme.error : colorScheme.primary,
-                  foregroundColor: colorScheme.onPrimary,
-                ),
-                if (isLoading) ...[
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Verifying location & face...',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                  ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              AnimatedBouncyButton(
+                label: isLoading
+                    ? 'Processing...'
+                    : (_isCheckedIn ? 'Check out' : 'Check in'),
+                icon: isLoading
+                    ? null
+                    : (_isCheckedIn ? Icons.logout_rounded : Icons.login_rounded),
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        if (_isCheckedIn) {
+                          _handleCheckOutFlow();
+                        } else {
+                          _pendingLateComment = isLateNow;
+                          _handleCheckInFlow();
+                        }
+                      },
+                backgroundColor:
+                    _isCheckedIn ? AppColors.surface : AppColors.accent,
+                foregroundColor:
+                    _isCheckedIn ? AppColors.danger : Colors.white,
+                variant: _isCheckedIn
+                    ? EduCoreButtonVariant.destructive
+                    : EduCoreButtonVariant.primary,
+              ),
+              if (isLoading) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Verifying location & face...',
+                  style: GoogleFonts.poppins(fontSize: 12, color: AppColors.inkMuted),
+                ),
+                const SizedBox(height: 8),
+                const LinearProgressIndicator(
+                  backgroundColor: AppColors.surfaceInset,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+                ),
               ],
-            ),
+            ],
           ),
         );
       },
@@ -669,16 +696,28 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         }
         if (state is TeacherScheduleLoaded) {
           if (state.schedule.isEmpty) {
-            return const Card(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(
-                  child: Text('No classes scheduled today.'),
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: AppColors.border, width: 1),
+              ),
+              child: Center(
+                child: Text(
+                  'No classes scheduled today.',
+                  style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkMuted),
                 ),
               ),
             );
           }
-          return Card(
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border, width: 1),
+              boxShadow: AppShadows.subtle,
+            ),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -686,26 +725,36 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final item = state.schedule[index];
-                final colorScheme = Theme.of(context).colorScheme;
                 return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   leading: Container(
-                    width: 48,
-                    height: 48,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.surfaceInset,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      border: Border.all(color: AppColors.border, width: 1),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.book_outlined,
-                      color: colorScheme.onPrimaryContainer,
+                      size: 18,
+                      color: AppColors.accent,
                     ),
                   ),
                   title: Text(
                     item.subject,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink,
+                    ),
                   ),
                   subtitle: Text(
-                    '${item.className} | ${DateFormatter.formatTime(item.startTime)} - ${DateFormatter.formatTime(item.endTime)}',
+                    '${item.className} · ${DateFormatter.formatTime(item.startTime)} - ${DateFormatter.formatTime(item.endTime)}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.inkMuted,
+                    ),
                   ),
                 );
               },
@@ -727,28 +776,42 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         }
         if (state is TeacherAttendanceLoaded) {
           final recent = state.records.take(5).toList();
-          return Card(
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: AppColors.border, width: 1),
+              boxShadow: AppShadows.subtle,
+            ),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: recent.length,
-              separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
+              separatorBuilder: (_, _) => const Divider(height: 1, indent: 64),
               itemBuilder: (context, index) {
                 final record = recent[index];
                 return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   leading: _buildStatusIcon(record.status),
-                  title: Text(DateFormatter.formatDate(record.date)),
-                  subtitle: Text(
-                    'In: ${record.checkInTime != null ? DateFormatter.formatTime(record.checkInTime!) : 'N/A'} | Out: ${record.checkOutTime != null ? DateFormatter.formatTime(record.checkOutTime!) : 'N/A'}',
-                  ),
-                  trailing: Chip(
-                    label: Text(
-                      record.status.name.toUpperCase(),
-                      style: const TextStyle(fontSize: 11, color: Colors.white),
+                  title: Text(
+                    DateFormatter.formatDate(record.date),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.ink,
                     ),
-                    backgroundColor: _statusColor(record.status),
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  subtitle: Text(
+                    'In: ${record.checkInTime != null ? DateFormatter.formatTime(record.checkInTime!) : '--'} · Out: ${record.checkOutTime != null ? DateFormatter.formatTime(record.checkOutTime!) : '--'}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.inkMuted,
+                    ),
+                  ),
+                  trailing: StatusDot.semantic(
+                    context,
+                    label: _statusSentenceCase(record.status),
+                    kind: record.status.name,
                   ),
                 );
               },
@@ -760,48 +823,44 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     );
   }
 
-  Widget _buildStatusIcon(AttendanceStatus status) {
-    final color = _statusColor(status);
-    final icon = switch (status) {
-      AttendanceStatus.present => Icons.check_circle,
-      AttendanceStatus.late => Icons.warning_amber,
-      AttendanceStatus.absent => Icons.cancel,
-    };
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Icon(icon, color: color),
-    );
-  }
-
-  Color _statusColor(AttendanceStatus status) {
-    final colors = AppStatusColors.of(context);
+  String _statusSentenceCase(AttendanceStatus status) {
     switch (status) {
       case AttendanceStatus.present:
-        return colors.success;
+        return 'Present';
       case AttendanceStatus.late:
-        return colors.warning;
+        return 'Late';
       case AttendanceStatus.absent:
-        return colors.danger;
+        return 'Absent';
     }
+  }
+
+  Widget _buildStatusIcon(AttendanceStatus status) {
+    final (color, icon) = switch (status) {
+      AttendanceStatus.present => (AppColors.success, Icons.check_circle_outline_rounded),
+      AttendanceStatus.late => (AppColors.warning, Icons.access_time_rounded),
+      AttendanceStatus.absent => (AppColors.danger, Icons.highlight_off_rounded),
+    };
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceInset,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.border, width: 1),
+      ),
+      child: Icon(icon, color: color, size: 18),
+    );
   }
 }
 
-/// Compact, tappable action tile for the dashboard quick-actions row.
 class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Color color;
   final VoidCallback onTap;
 
   const _QuickAction({
     required this.icon,
     required this.label,
-    required this.color,
     required this.onTap,
   });
 
@@ -809,25 +868,37 @@ class _QuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(14),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border, width: 1),
+          boxShadow: AppShadows.subtle,
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 6),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.accentTint,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(color: AppColors.infoBorder, width: 1),
+              ),
+              child: Icon(icon, color: AppColors.accent, size: 18),
+            ),
+            const SizedBox(height: 8),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: color,
+                fontWeight: FontWeight.w500,
+                color: AppColors.ink,
               ),
             ),
           ],

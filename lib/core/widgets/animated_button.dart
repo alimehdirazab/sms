@@ -1,5 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_colors.dart';
 
+enum EduCoreButtonVariant {
+  primary,
+  secondary,
+  outline,
+  ghost,
+  destructive,
+}
+
+/// Tactile, quiet luxury button component aligned with DESIGN.md Section 7.1.
+/// Maintains backwards compatibility with [AnimatedBouncyButton].
 class AnimatedBouncyButton extends StatefulWidget {
   final String label;
   final IconData? icon;
@@ -8,6 +20,9 @@ class AnimatedBouncyButton extends StatefulWidget {
   final Color? foregroundColor;
   final bool isExpanded;
   final double? width;
+  final double height;
+  final bool isLoading;
+  final EduCoreButtonVariant variant;
 
   const AnimatedBouncyButton({
     super.key,
@@ -18,6 +33,9 @@ class AnimatedBouncyButton extends StatefulWidget {
     this.foregroundColor,
     this.isExpanded = true,
     this.width,
+    this.height = 48.0,
+    this.isLoading = false,
+    this.variant = EduCoreButtonVariant.primary,
   });
 
   @override
@@ -36,8 +54,8 @@ class _AnimatedBouncyButtonState extends State<AnimatedBouncyButton>
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.985).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
   }
 
@@ -49,19 +67,61 @@ class _AnimatedBouncyButtonState extends State<AnimatedBouncyButton>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final bgColor = widget.backgroundColor ?? colorScheme.primary;
-    final fgColor = widget.foregroundColor ?? colorScheme.onPrimary;
+    final isEnabled = widget.onPressed != null && !widget.isLoading;
+
+    Color bg;
+    Color fg;
+    Color border;
+
+    if (!isEnabled) {
+      bg = AppColors.surfaceInset;
+      fg = AppColors.inkFaint;
+      border = AppColors.border;
+    } else if (widget.backgroundColor != null) {
+      bg = widget.backgroundColor!;
+      fg = widget.foregroundColor ?? Colors.white;
+      border = widget.backgroundColor!;
+    } else {
+      switch (widget.variant) {
+        case EduCoreButtonVariant.primary:
+          bg = AppColors.accent;
+          fg = Colors.white;
+          border = AppColors.accent;
+          break;
+        case EduCoreButtonVariant.secondary:
+          bg = AppColors.surface;
+          fg = AppColors.ink;
+          border = AppColors.border;
+          break;
+        case EduCoreButtonVariant.outline:
+          bg = AppColors.surface;
+          fg = AppColors.inkSecondary;
+          border = AppColors.borderHover;
+          break;
+        case EduCoreButtonVariant.ghost:
+          bg = Colors.transparent;
+          fg = AppColors.inkSecondary;
+          border = Colors.transparent;
+          break;
+        case EduCoreButtonVariant.destructive:
+          bg = AppColors.surface;
+          fg = AppColors.danger;
+          border = AppColors.dangerBorder;
+          break;
+      }
+    }
 
     return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onPressed?.call();
-      },
-      onTapCancel: () => _controller.reverse(),
+      onTapDown: isEnabled ? (_) => _controller.forward() : null,
+      onTapUp: isEnabled
+          ? (_) {
+              _controller.reverse();
+              widget.onPressed?.call();
+            }
+          : null,
+      onTapCancel: isEnabled ? () => _controller.reverse() : null,
       child: AnimatedBuilder(
-        listenable: _scaleAnimation,
+        animation: _scaleAnimation,
         builder: (context, child) {
           return Transform.scale(
             scale: _scaleAnimation.value,
@@ -69,34 +129,48 @@ class _AnimatedBouncyButtonState extends State<AnimatedBouncyButton>
           );
         },
         child: Container(
-          width: widget.isExpanded ? widget.width ?? double.infinity : null,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          width: widget.isExpanded ? widget.width ?? double.infinity : widget.width,
+          height: widget.height,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
           decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: bgColor.withValues(alpha: 0.4),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            color: bg,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: border, width: 1),
+            boxShadow: (widget.variant == EduCoreButtonVariant.primary && isEnabled)
+                ? const [
+                    BoxShadow(
+                      color: Color(0x0A2E2E99),
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (widget.icon != null) ...[
-                Icon(widget.icon, color: fgColor, size: 22),
-                const SizedBox(width: 10),
+              if (widget.isLoading) ...[
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(fg),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ] else if (widget.icon != null) ...[
+                Icon(widget.icon, color: fg, size: 18),
+                const SizedBox(width: 8),
               ],
               Flexible(
                 child: Text(
                   widget.label,
-                  style: TextStyle(
-                    color: fgColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                  style: GoogleFonts.poppins(
+                    color: fg,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -106,22 +180,5 @@ class _AnimatedBouncyButtonState extends State<AnimatedBouncyButton>
         ),
       ),
     );
-  }
-}
-
-class AnimatedBuilder extends AnimatedWidget {
-  final Widget? child;
-  final Widget Function(BuildContext context, Widget? child) builder;
-
-  const AnimatedBuilder({
-    super.key,
-    required super.listenable,
-    required this.builder,
-    this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return builder(context, child);
   }
 }

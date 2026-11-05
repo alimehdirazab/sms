@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../bloc/teacher_bloc.dart';
-import '../../../core/theme/app_status_colors.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/animated_button.dart';
 import '../../auth/models/marks_model.dart';
+import '../../shared/widgets/stat_card.dart';
 
 // --- Teacher Marks Home ---
 class TeacherMarksScreen extends StatelessWidget {
@@ -14,17 +16,26 @@ class TeacherMarksScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: const Text('Marks Management'),
+        title: Text(
+          'Marks management',
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.file_download_outlined),
+            icon: const Icon(Icons.file_download_outlined, size: 20),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Import/Export - Coming soon')),
+                const SnackBar(content: Text('Import/Export feature coming soon')),
               );
             },
-            tooltip: 'Import/Export',
+            tooltip: 'Import / Export',
           ),
         ],
       ),
@@ -48,8 +59,9 @@ class TeacherMarksScreen extends StatelessWidget {
           if (state is TeacherClassesLoaded) {
             if (state.classes.isEmpty) {
               return const EmptyStateWidget(
-                message: 'No classes assigned.',
-                icon: Icons.class_,
+                message: 'No classes assigned',
+                subtitle: 'Classes assigned by administration will appear here.',
+                icon: Icons.school_outlined,
               );
             }
             return GridView.builder(
@@ -58,62 +70,67 @@ class TeacherMarksScreen extends StatelessWidget {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 1.3,
+                childAspectRatio: 1.25,
               ),
               itemCount: state.classes.length,
               itemBuilder: (context, index) {
                 final className = state.classes[index];
-                final colorScheme = Theme.of(context).colorScheme;
-                return Card(
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TeacherSubjectsScreen(
-                            className: className,
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TeacherSubjectsScreen(
+                          className: className,
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: AppColors.border, width: 1),
+                      boxShadow: AppShadows.subtle,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.accentTint,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            border: Border.all(color: AppColors.infoBorder, width: 1),
+                          ),
+                          child: const Icon(
+                            Icons.school_outlined,
+                            size: 22,
+                            color: AppColors.accent,
                           ),
                         ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.class_,
-                              color: colorScheme.onPrimaryContainer,
-                            ),
+                        const SizedBox(height: 12),
+                        Text(
+                          className,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.ink,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            className,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
                 );
               },
             );
           }
-          // Initial state - trigger load
           WidgetsBinding.instance.addPostFrameCallback((_) {
             context.read<TeacherBloc>().add(LoadTeacherClasses());
           });
@@ -133,15 +150,20 @@ class TeacherSubjectsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: Text(className),
+        title: Text(
+          className,
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
       ),
       body: BlocConsumer<TeacherBloc, TeacherState>(
-        listener: (context, state) {
-          if (state is TeacherSubjectsLoaded && state.selectedClass == className) {
-            // Done
-          }
-        },
+        listener: (context, state) {},
         buildWhen: (_, state) =>
             state is TeacherSubjectsLoaded ||
             state is TeacherSubjectsLoading ||
@@ -165,40 +187,64 @@ class TeacherSubjectsScreen extends StatelessWidget {
             return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: state.subjects.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final subject = state.subjects[index];
-                final colorScheme = Theme.of(context).colorScheme;
-                return Card(
-                  child: ListTile(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TeacherExamsScreen(
-                            className: className,
-                            subject: subject,
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TeacherExamsScreen(
+                          className: className,
+                          subject: subject,
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: AppColors.border, width: 1),
+                      boxShadow: AppShadows.subtle,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceInset,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            border: Border.all(color: AppColors.border, width: 1),
+                          ),
+                          child: const Icon(
+                            Icons.menu_book_rounded,
+                            size: 18,
+                            color: AppColors.accent,
                           ),
                         ),
-                      );
-                    },
-                    leading: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.menu_book,
-                        color: colorScheme.onPrimaryContainer,
-                      ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            subject,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: AppColors.inkFaint,
+                        ),
+                      ],
                     ),
-                    title: Text(
-                      subject,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
                   ),
                 );
               },
@@ -228,8 +274,17 @@ class TeacherExamsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: Text('$subject - Exams'),
+        title: Text(
+          '$subject exams',
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
       ),
       body: BlocBuilder<TeacherBloc, TeacherState>(
         buildWhen: (_, state) =>
@@ -254,54 +309,78 @@ class TeacherExamsScreen extends StatelessWidget {
             return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: state.exams.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
                 final exam = state.exams[index];
-                return Card(
-                  child: ListTile(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => StudentMarksEntryScreen(
-                            exam: exam,
+                final isPublished = exam.status == MarkStatus.published;
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StudentMarksEntryScreen(
+                          exam: exam,
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: AppColors.border, width: 1),
+                      boxShadow: AppShadows.subtle,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceInset,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            border: Border.all(color: AppColors.border, width: 1),
+                          ),
+                          child: Icon(
+                            isPublished
+                                ? Icons.check_circle_outline_rounded
+                                : Icons.edit_note_rounded,
+                            size: 20,
+                            color: isPublished ? AppColors.success : AppColors.warning,
                           ),
                         ),
-                      );
-                    },
-                    leading: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: exam.status == MarkStatus.published
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : Colors.orange.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        exam.status == MarkStatus.published
-                            ? Icons.check_circle
-                            : Icons.edit_note,
-                        color: exam.status == MarkStatus.published
-                            ? Colors.green
-                            : Colors.orange,
-                      ),
-                    ),
-                    title: Text(
-                      exam.name,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(exam.subjectName),
-                    trailing: Chip(
-                      label: Text(
-                        exam.status.name.toUpperCase(),
-                        style: const TextStyle(fontSize: 11, color: Colors.white),
-                      ),
-                      backgroundColor: exam.status == MarkStatus.published
-                          ? Colors.green
-                          : Colors.orange,
-                      padding: EdgeInsets.zero,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                exam.name,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                exam.subjectName,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: AppColors.inkMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        StatusPill.semantic(
+                          context,
+                          label: isPublished ? 'Published' : 'Draft',
+                          kind: isPublished ? 'success' : 'warning',
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -373,23 +452,18 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
+      backgroundColor: AppColors.bg,
       appBar: AppBar(
-        title: Text(widget.exam.name),
-        actions: [
-          BlocBuilder<TeacherBloc, TeacherState>(
-            builder: (context, state) {
-              return const IconButton(
-                icon: Icon(Icons.publish),
-                // Publish disabled for teacher role; enable for admin
-                onPressed: null,
-                tooltip: 'Only admin can publish marks',
-              );
-            },
+        title: Text(
+          widget.exam.name,
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
           ),
-        ],
+        ),
       ),
       body: BlocConsumer<TeacherBloc, TeacherState>(
         listener: (context, state) {
@@ -397,7 +471,7 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.message),
-                backgroundColor: colorScheme.primary,
+                backgroundColor: AppColors.accent,
               ),
             );
           }
@@ -409,7 +483,7 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
             state is TeacherError,
         builder: (context, state) {
           if (state is TeacherStudentMarksLoading) {
-            return const ShimmerLoading(itemCount: 8, itemHeight: 120);
+            return const ShimmerLoading(itemCount: 6, itemHeight: 140);
           }
           if (state is TeacherError) {
             return AppErrorWidget(
@@ -427,7 +501,6 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
                 ? state.marks
                 : <StudentMarkModel>[];
 
-            // Initialize controllers
             for (final mark in marks) {
               if (!_obtainedControllers.containsKey(mark.studentId)) {
                 _obtainedControllers[mark.studentId] =
@@ -465,13 +538,19 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
                   ),
                 ),
                 SafeArea(
-                  child: Padding(
+                  child: Container(
                     padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(
+                      color: AppColors.surface,
+                      border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+                    ),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         AnimatedBouncyButton(
-                          label: 'Save as Draft',
+                          label: 'Save as draft',
                           icon: Icons.save_outlined,
+                          isLoading: state is TeacherMarksSaving,
                           onPressed: (state is TeacherMarksSaving || !_allFieldsFilled)
                               ? null
                               : () {
@@ -502,10 +581,6 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
                                       .add(SaveStudentMarks(updatedMarks));
                                 },
                         ),
-                        if (state is TeacherMarksSaving) ...[
-                          const SizedBox(height: 12),
-                          const LinearProgressIndicator(),
-                        ],
                       ],
                     ),
                   ),
@@ -513,7 +588,7 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
               ],
             );
           }
-          return const ShimmerLoading(itemCount: 8, itemHeight: 120);
+          return const ShimmerLoading(itemCount: 6, itemHeight: 140);
         },
       ),
     );
@@ -555,160 +630,145 @@ class _StudentMarkCardState extends State<_StudentMarkCard> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: colorScheme.primaryContainer,
+    final isPublished = widget.mark.status == MarkStatus.published;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
+        boxShadow: AppShadows.subtle,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.accentTint,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  border: Border.all(color: AppColors.infoBorder, width: 1),
+                ),
+                child: Center(
                   child: Text(
                     widget.mark.rollNumber,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.mark.studentName,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        'Roll: ${widget.mark.rollNumber}',
-                        style: TextStyle(
-                          color: colorScheme.onSurfaceVariant,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: widget.mark.status == MarkStatus.published
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : Colors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    widget.mark.status.name.toUpperCase(),
-                    style: TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 11,
+                      color: AppColors.accent,
                       fontWeight: FontWeight.w600,
-                      color: widget.mark.status == MarkStatus.published
-                          ? Colors.green
-                          : Colors.orange,
                     ),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: widget.obtainedController,
-                    decoration: const InputDecoration(
-                      labelText: 'Obtained',
-                      hintText: '0',
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) {
-                      _calculate();
-                      widget.onChanged();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: widget.totalController,
-                    decoration: const InputDecoration(
-                      labelText: 'Total',
-                      hintText: '100',
-                      isDense: true,
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) {
-                      _calculate();
-                      widget.onChanged();
-                    },
-                  ),
-                ),
-              ],
-            ),
-            if (_percentage > 0) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Text(
-                    '${_percentage.toStringAsFixed(1)}%',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: _percentage >= 40
-                          ? AppStatusColors.of(context).success
-                          : AppStatusColors.of(context).danger,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: _gradeColor(_grade).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      'Grade: $_grade',
-                      style: TextStyle(
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.mark.studentName,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: _gradeColor(_grade),
-                        fontSize: 13,
+                        color: AppColors.ink,
                       ),
                     ),
-                  ),
-                ],
+                    Text(
+                      'Roll no. ${widget.mark.rollNumber}',
+                      style: GoogleFonts.poppins(
+                        color: AppColors.inkMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              StatusPill.semantic(
+                context,
+                label: isPublished ? 'Published' : 'Draft',
+                kind: isPublished ? 'success' : 'warning',
               ),
             ],
-            const SizedBox(height: 12),
-            TextField(
-              controller: widget.remarkController,
-              maxLines: 2,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Remarks (optional)',
-                hintText: 'e.g. Needs improvement in algebra',
-                prefixIcon: Icon(Icons.rate_review_outlined, size: 20),
-                isDense: true,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: widget.obtainedController,
+                  decoration: const InputDecoration(
+                    labelText: 'Obtained',
+                    hintText: '0',
+                    isDense: true,
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) {
+                    _calculate();
+                    widget.onChanged();
+                  },
+                ),
               ),
-              onChanged: (_) => widget.onChanged(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: widget.totalController,
+                  decoration: const InputDecoration(
+                    labelText: 'Total',
+                    hintText: '100',
+                    isDense: true,
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) {
+                    _calculate();
+                    widget.onChanged();
+                  },
+                ),
+              ),
+            ],
+          ),
+          if (_percentage > 0) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Text(
+                  '${_percentage.toStringAsFixed(1)}%',
+                  style: GoogleFonts.instrumentSerif(
+                    fontSize: 20,
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.normal,
+                    color: _percentage >= 40
+                        ? AppColors.success
+                        : AppColors.danger,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                StatusPill.semantic(
+                  context,
+                  label: 'Grade: $_grade',
+                  kind: _percentage >= 40 ? 'success' : 'danger',
+                ),
+              ],
             ),
           ],
-        ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: widget.remarkController,
+            maxLines: 2,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              labelText: 'Remarks (optional)',
+              hintText: 'e.g. Needs improvement in algebra',
+              prefixIcon: Icon(Icons.rate_review_outlined, size: 18),
+              isDense: true,
+            ),
+            onChanged: (_) => widget.onChanged(),
+          ),
+        ],
       ),
     );
-  }
-
-  Color _gradeColor(String grade) {
-    final colors = AppStatusColors.of(context);
-    if (grade == 'A+' || grade == 'A') return colors.success;
-    if (grade == 'B+' || grade == 'B') return colors.info;
-    if (grade == 'C') return colors.warning;
-    return colors.danger;
   }
 }

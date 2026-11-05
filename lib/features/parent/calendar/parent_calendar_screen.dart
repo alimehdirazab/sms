@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../bloc/parent_bloc.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../shared/widgets/academic_calendar_view.dart';
@@ -27,7 +29,18 @@ class _ParentCalendarScreenState extends State<ParentCalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Academic Calendar')),
+      backgroundColor: AppColors.bg,
+      appBar: AppBar(
+        title: Text(
+          'Academic calendar',
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 24,
+            fontWeight: FontWeight.normal,
+            color: AppColors.ink,
+            letterSpacing: -0.02 * 24,
+          ),
+        ),
+      ),
       body: BlocBuilder<ParentBloc, ParentState>(
         buildWhen: (_, state) =>
             state is ParentCalendarLoaded || state is ParentCalendarLoading,
@@ -35,29 +48,35 @@ class _ParentCalendarScreenState extends State<ParentCalendarScreen> {
           if (state is! ParentCalendarLoaded) {
             return const ShimmerLoading(itemCount: 5, itemHeight: 90);
           }
-          if (state.events.isEmpty) {
+          final events = state.events;
+          if (events.isEmpty) {
             return const EmptyStateWidget(
-              message: 'No calendar events published yet.',
-              icon: Icons.calendar_month,
+              message: 'No calendar events scheduled',
+              subtitle: 'Campus meetings, holidays, and examination schedules will appear here.',
+              icon: Icons.calendar_month_outlined,
             );
           }
-          final events = state.events;
           return RefreshIndicator(
+            color: AppColors.accent,
             onRefresh: () async =>
                 context.read<ParentBloc>().add(LoadAcademicCalendar()),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: AcademicCalendarView(
-                    month: _month,
-                    events: events,
-                    selectedDate: _selected,
-                    onSelectDate: (d) => setState(() => _selected = d),
-                    onChangeMonth: (m) => setState(() => _month = m),
-                  ),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  border: Border.all(color: AppColors.border, width: 1),
+                  boxShadow: AppShadows.subtle,
+                ),
+                child: AcademicCalendarView(
+                  month: _month,
+                  events: events,
+                  selectedDate: _selected,
+                  onSelectDate: (d) => setState(() => _selected = d),
+                  onChangeMonth: (m) => setState(() => _month = m),
                 ),
               ),
             ),
