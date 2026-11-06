@@ -8,6 +8,9 @@ import '../../auth/models/notification_model.dart';
 import '../../auth/models/leave_model.dart';
 import '../../auth/models/academic_calendar_model.dart';
 import '../attendance/repositories/teacher_attendance_repository.dart';
+import '../schedule/repositories/teacher_timetable_repository.dart';
+import '../../parent/calendar/repositories/academic_calendar_repository.dart';
+import '../../parent/notifications/repositories/notification_repository.dart';
 import 'mock_teacher_repository.dart';
 
 // --- States ---
@@ -116,12 +119,29 @@ class TeacherScheduleLoaded extends TeacherState {
   List<Object?> get props => [schedule];
 }
 
-// Notification count
+// Notification count & notifications
 class TeacherNotificationCountLoaded extends TeacherState {
   final int count;
   const TeacherNotificationCountLoaded(this.count);
   @override
   List<Object?> get props => [count];
+}
+
+class TeacherNotificationsLoading extends TeacherState {}
+
+class TeacherNotificationsLoaded extends TeacherState {
+  final List<NotificationModel> notifications;
+  final int unreadCount;
+  const TeacherNotificationsLoaded(this.notifications, {this.unreadCount = 0});
+  @override
+  List<Object?> get props => [notifications, unreadCount];
+}
+
+class TeacherNotificationsError extends TeacherState {
+  final String message;
+  const TeacherNotificationsError(this.message);
+  @override
+  List<Object?> get props => [message];
 }
 
 // Weekly timetable
@@ -291,16 +311,61 @@ class CancelTeacherLeaveApplication extends TeacherEvent {
   List<Object?> get props => [leaveId];
 }
 
+class BroadcastAnnouncementEvent extends TeacherEvent {
+  final String title;
+  final String message;
+  final String category;
+  final int schoolId;
+
+  const BroadcastAnnouncementEvent({
+    required this.title,
+    required this.message,
+    this.category = 'ANNOUNCEMENT',
+    required this.schoolId,
+  });
+
+  @override
+  List<Object?> get props => [title, message, category, schoolId];
+}
+
+class LoadTeacherNotifications extends TeacherEvent {
+  final bool onlyUnread;
+  final String? category;
+  const LoadTeacherNotifications({this.onlyUnread = false, this.category});
+  @override
+  List<Object?> get props => [onlyUnread, category];
+}
+
+class MarkTeacherNotificationAsRead extends TeacherEvent {
+  final String notificationId;
+  const MarkTeacherNotificationAsRead(this.notificationId);
+  @override
+  List<Object?> get props => [notificationId];
+}
+
+class MarkAllTeacherNotificationsAsRead extends TeacherEvent {
+  const MarkAllTeacherNotificationsAsRead();
+}
+
 // --- BLoC ---
 class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
   final MockTeacherRepository _repository;
   final TeacherAttendanceRepository? _attendanceRepository;
+  final TeacherTimetableRepository? _timetableRepository;
+  final AcademicCalendarRepository? _calendarRepository;
+  final NotificationRepository? _notificationRepository;
 
   TeacherBloc({
     MockTeacherRepository? repository,
     TeacherAttendanceRepository? attendanceRepository,
+    TeacherTimetableRepository? timetableRepository,
+    AcademicCalendarRepository? calendarRepository,
+    NotificationRepository? notificationRepository,
   })  : _repository = repository ?? MockTeacherRepository(),
         _attendanceRepository = attendanceRepository,
+        _timetableRepository = timetableRepository,
+        _calendarRepository = calendarRepository,
+        _notificationRepository = notificationRepository,
         super(TeacherInitial()) {
     on<LoadTeacherProfile>(_onLoadProfile);
     on<LoadTeacherAttendance>(_onLoadAttendance);
@@ -322,6 +387,10 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
     on<LoadTeacherLeaveApplications>(_onLoadLeaves);
     on<SubmitTeacherLeaveApplication>(_onSubmitLeave);
     on<CancelTeacherLeaveApplication>(_onCancelLeave);
+    on<BroadcastAnnouncementEvent>(_onBroadcastAnnouncement);
+    on<LoadTeacherNotifications>(_onLoadTeacherNotifications);
+    on<MarkTeacherNotificationAsRead>(_onMarkTeacherNotificationAsRead);
+    on<MarkAllTeacherNotificationsAsRead>(_onMarkAllTeacherNotificationsAsRead);
   }
 
   Future<void> _onLoadProfile(
@@ -441,6 +510,7 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
           accuracy: event.accuracy,
           selfieImage: event.selfieFile,
         );
+        add(LoadTeacherAttendance());
       } else {
         await Future.delayed(const Duration(milliseconds: 1500));
       }
@@ -462,6 +532,7 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
           longitude: event.longitude,
           accuracy: event.accuracy,
         );
+        add(LoadTeacherAttendance());
       } else {
         await Future.delayed(const Duration(milliseconds: 1500));
       }
@@ -477,6 +548,24 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
   ) async {
     emit(TeacherScheduleLoading());
     try {
+      if (_timetableRepository != null) {
+        final timetable = await _timetableRepository.getTodayTimetable();
+        if (timetable.periods.isNotEmpty) {
+          final now = DateTime.now();
+          final schedules = timetable.periods.map((p) {
+            return ScheduleModel(
+              id: p.id,
+              subject: p.subjectName,
+              className: p.className,
+              section: p.roomName.isNotEmpty ? p.roomName : 'Room 1',
+              startTime: now,
+              endTime: now.add(const Duration(minutes: 45)),
+            );
+          }).toList();
+          emit(TeacherScheduleLoaded(schedules));
+          return;
+        }
+      }
       final schedule = await _repository.getTodaySchedule();
       emit(TeacherScheduleLoaded(schedule));
     } catch (e) {
@@ -489,8 +578,85 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
     Emitter<TeacherState> emit,
   ) async {
     try {
+      if (_notificationRepository != null) {
+        final res = await _notificationRepository.getNotifications(
+          page: 1,
+          limit: 1,
+        );
+        emit(TeacherNotificationCountLoaded(res.unreadCount));
+        return;
+      }
       final count = await _repository.getNotificationCount();
       emit(TeacherNotificationCountLoaded(count));
+    } catch (_) {
+      emit(const TeacherNotificationCountLoaded(0));
+    }
+  }
+
+  Future<void> _onBroadcastAnnouncement(
+    BroadcastAnnouncementEvent event,
+    Emitter<TeacherState> emit,
+  ) async {
+    try {
+      if (_notificationRepository != null) {
+        await _notificationRepository.broadcastAnnouncement(
+          title: event.title,
+          message: event.message,
+          category: event.category,
+          schoolId: event.schoolId,
+        );
+        add(LoadNotificationCount());
+        add(const LoadTeacherNotifications());
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _onLoadTeacherNotifications(
+    LoadTeacherNotifications event,
+    Emitter<TeacherState> emit,
+  ) async {
+    emit(TeacherNotificationsLoading());
+    try {
+      if (_notificationRepository != null) {
+        final res = await _notificationRepository.getNotifications(
+          onlyUnread: event.onlyUnread,
+          category: event.category,
+        );
+        emit(TeacherNotificationsLoaded(
+          res.notifications,
+          unreadCount: res.unreadCount,
+        ));
+        return;
+      }
+      emit(const TeacherNotificationsLoaded([]));
+    } catch (e) {
+      emit(TeacherNotificationsError(e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  Future<void> _onMarkTeacherNotificationAsRead(
+    MarkTeacherNotificationAsRead event,
+    Emitter<TeacherState> emit,
+  ) async {
+    try {
+      if (_notificationRepository != null) {
+        await _notificationRepository.markAsRead(event.notificationId);
+        add(const LoadTeacherNotifications());
+        add(LoadNotificationCount());
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _onMarkAllTeacherNotificationsAsRead(
+    MarkAllTeacherNotificationsAsRead event,
+    Emitter<TeacherState> emit,
+  ) async {
+    try {
+      if (_notificationRepository != null) {
+        await _notificationRepository.markAllAsRead();
+        add(const LoadTeacherNotifications());
+        add(LoadNotificationCount());
+      }
     } catch (_) {}
   }
 
@@ -533,6 +699,11 @@ class TeacherBloc extends Bloc<TeacherEvent, TeacherState> {
   ) async {
     emit(TeacherCalendarLoading());
     try {
+      if (_calendarRepository != null) {
+        final events = await _calendarRepository.getEvents();
+        emit(TeacherCalendarLoaded(events));
+        return;
+      }
       final events = await _repository.getAcademicCalendar();
       emit(TeacherCalendarLoaded(events));
     } catch (e) {

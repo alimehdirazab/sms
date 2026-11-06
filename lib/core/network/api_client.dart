@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../storage/session_storage_service.dart';
 import 'api_constants.dart';
+import 'api_log_interceptor.dart';
 import 'auth_interceptor.dart';
 
 class ApiClient {
@@ -35,17 +36,8 @@ class ApiClient {
       ),
     );
 
-    // Optional logger interceptor
-    dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: false,
-        responseBody: true,
-        error: true,
-      ),
-    );
+    // High-visibility debug console logger
+    dio.interceptors.add(AppApiLogInterceptor());
   }
 
   void updateBaseUrl(String newBaseUrl) {

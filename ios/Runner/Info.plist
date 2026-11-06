@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app requires access to your location for teacher attendance check-in and check-out verification.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app requires access to your location for teacher attendance check-in and check-out verification.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires access to your camera to capture selfie verification for attendance.</string>
 </dict>
 </plist>

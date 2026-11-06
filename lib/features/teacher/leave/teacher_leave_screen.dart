@@ -428,7 +428,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '${item.startDate} → ${item.endDate}',
+                    _formatDateRange(item.startDate, item.endDate),
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: AppColors.inkSecondary,
@@ -579,7 +579,7 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
               _detailRow('Status', _statusSentenceCase(item.status)),
               _detailRow(
                 'Duration',
-                '${item.startDate} to ${item.endDate} (${item.totalDays} days)',
+                '${_formatDateRange(item.startDate, item.endDate)} (${item.totalDays} day${item.totalDays == 1 ? '' : 's'})',
               ),
               _detailRow('Reason / description', item.description),
               if (item.reviewReason != null && item.reviewReason!.isNotEmpty)
@@ -590,6 +590,25 @@ class _TeacherLeaveScreenState extends State<TeacherLeaveScreen>
         );
       },
     );
+  }
+
+  String _formatDateRange(String? start, String? end) {
+    if (start == null || start.trim().isEmpty) return '—';
+    try {
+      final s = DateTime.parse(start.trim());
+      final formattedStart = DateFormat('dd MMM yyyy').format(s);
+      if (end == null || end.trim().isEmpty || end.trim() == start.trim()) {
+        return formattedStart;
+      }
+      final e = DateTime.parse(end.trim());
+      final formattedEnd = DateFormat('dd MMM yyyy').format(e);
+      return '$formattedStart → $formattedEnd';
+    } catch (_) {
+      if (end != null && end.isNotEmpty && end != start) {
+        return '$start → $end';
+      }
+      return start;
+    }
   }
 
   Widget _detailRow(String label, String value) {

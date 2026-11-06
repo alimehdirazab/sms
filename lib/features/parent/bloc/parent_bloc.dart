@@ -9,6 +9,10 @@ import '../../auth/models/fee_model.dart';
 import '../../auth/models/academic_calendar_model.dart';
 import 'mock_parent_repository.dart';
 import '../repositories/student_switch_repository.dart';
+import '../fees/models/parent_fee_api_model.dart';
+import '../fees/repositories/parent_fee_repository.dart';
+import '../calendar/repositories/academic_calendar_repository.dart';
+import '../notifications/repositories/notification_repository.dart';
 
 // --- States ---
 abstract class ParentState extends Equatable {
@@ -62,9 +66,10 @@ class ParentUpcomingExamsLoaded extends ParentState {
 class ParentNotificationsLoading extends ParentState {}
 class ParentNotificationsLoaded extends ParentState {
   final List<NotificationModel> notifications;
-  const ParentNotificationsLoaded(this.notifications);
+  final int unreadCount;
+  const ParentNotificationsLoaded(this.notifications, {this.unreadCount = 0});
   @override
-  List<Object?> get props => [notifications];
+  List<Object?> get props => [notifications, unreadCount];
 }
 
 class ParentError extends ParentState {
@@ -105,11 +110,21 @@ class ParentFeesLoaded extends ParentState {
   final List<FeeModel> fees;
   final List<FeePaymentModel> payments;
   final SchoolAccountModel account;
-  const ParentFeesLoaded(this.fees, this.payments, this.account);
-  double get totalOutstanding =>
-      fees.fold<double>(0, (sum, f) => sum + f.balance);
+  final ParentFeeDataModel? feeData;
+
+  const ParentFeesLoaded(
+    this.fees,
+    this.payments,
+    this.account, {
+    this.feeData,
+  });
+
+  double get totalOutstanding => feeData != null
+      ? feeData!.summary.grandTotal
+      : fees.fold<double>(0, (sum, f) => sum + f.balance);
+
   @override
-  List<Object?> get props => [fees, payments, account];
+  List<Object?> get props => [fees, payments, account, feeData];
 }
 class ParentFeeSubmitting extends ParentState {
   const ParentFeeSubmitting();
@@ -188,7 +203,24 @@ class LoadUpcomingExams extends ParentEvent {
   @override
   List<Object?> get props => [studentId];
 }
-class LoadNotifications extends ParentEvent {}
+class LoadNotifications extends ParentEvent {
+  final bool onlyUnread;
+  final String? category;
+  const LoadNotifications({this.onlyUnread = false, this.category});
+  @override
+  List<Object?> get props => [onlyUnread, category];
+}
+
+class MarkNotificationAsRead extends ParentEvent {
+  final String notificationId;
+  const MarkNotificationAsRead(this.notificationId);
+  @override
+  List<Object?> get props => [notificationId];
+}
+
+class MarkAllNotificationsAsRead extends ParentEvent {
+  const MarkAllNotificationsAsRead();
+}
 class ChangePasswordRequested extends ParentEvent {
   final String oldPassword;
   final String newPassword;
@@ -248,10 +280,16 @@ class LoadStudentAnalytics extends ParentEvent {
 class ParentBloc extends Bloc<ParentEvent, ParentState> {
   final MockParentRepository _repository;
   final StudentSwitchRepository? studentSwitchRepository;
+  final ParentFeeRepository? feeRepository;
+  final AcademicCalendarRepository? calendarRepository;
+  final NotificationRepository? notificationRepository;
 
   ParentBloc({
     MockParentRepository? repository,
     this.studentSwitchRepository,
+    this.feeRepository,
+    this.calendarRepository,
+    this.notificationRepository,
   })  : _repository = repository ?? MockParentRepository(),
         super(ParentInitial()) {
     on<LoadParentProfile>(_onLoadProfile);
@@ -261,6 +299,8 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
     on<LoadStudentMarks>(_onLoadStudentMarks);
     on<LoadUpcomingExams>(_onLoadUpcomingExams);
     on<LoadNotifications>(_onLoadNotifications);
+    on<MarkNotificationAsRead>(_onMarkNotificationAsRead);
+    on<MarkAllNotificationsAsRead>(_onMarkAllNotificationsAsRead);
     on<ChangePasswordRequested>(_onChangePassword);
     on<LoadLeaveApplications>(_onLoadLeaveApplications);
     on<SubmitLeaveApplication>(_onSubmitLeaveApplication);
@@ -406,11 +446,43 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
   ) async {
     emit(ParentNotificationsLoading());
     try {
+      if (notificationRepository != null) {
+        final res = await notificationRepository!.getNotifications(
+          onlyUnread: event.onlyUnread,
+          category: event.category,
+        );
+        emit(ParentNotificationsLoaded(res.notifications, unreadCount: res.unreadCount));
+        return;
+      }
       final notifications = await _repository.getNotifications();
       emit(ParentNotificationsLoaded(notifications));
     } catch (e) {
       emit(ParentError(e.toString()));
     }
+  }
+
+  Future<void> _onMarkNotificationAsRead(
+    MarkNotificationAsRead event,
+    Emitter<ParentState> emit,
+  ) async {
+    try {
+      if (notificationRepository != null) {
+        await notificationRepository!.markAsRead(event.notificationId);
+        add(const LoadNotifications());
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _onMarkAllNotificationsAsRead(
+    MarkAllNotificationsAsRead event,
+    Emitter<ParentState> emit,
+  ) async {
+    try {
+      if (notificationRepository != null) {
+        await notificationRepository!.markAllAsRead();
+        add(const LoadNotifications());
+      }
+    } catch (_) {}
   }
 
   Future<void> _onChangePassword(
@@ -479,11 +551,46 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
   ) async {
     emit(const ParentFeesLoading());
     try {
+      if (feeRepository != null) {
+        final feeData = await feeRepository!.getFeeDetails(event.studentId);
+        SchoolAccountModel domainAccount = feeData.toDomainAccount();
+        try {
+          final liveBank = await feeRepository!.getBankDetails();
+          domainAccount = SchoolAccountModel(
+            accountName: liveBank.accountName.isNotEmpty
+                ? liveBank.accountName
+                : domainAccount.accountName,
+            accountNumber: liveBank.accountNumber.isNotEmpty
+                ? liveBank.accountNumber
+                : domainAccount.accountNumber,
+            ifscCode: liveBank.ibanNo.isNotEmpty
+                ? liveBank.ibanNo
+                : domainAccount.ifscCode,
+            bankName: liveBank.bankName.isNotEmpty
+                ? liveBank.bankName
+                : domainAccount.bankName,
+            branch: liveBank.ibanNo.isNotEmpty
+                ? 'IBAN: ${liveBank.ibanNo}'
+                : domainAccount.branch,
+            upiId: domainAccount.upiId,
+          );
+        } catch (_) {}
+
+        final domainFees = feeData.toDomainFees();
+        final domainPayments = feeData.toDomainPayments();
+        emit(ParentFeesLoaded(
+          domainFees,
+          domainPayments,
+          domainAccount,
+          feeData: feeData,
+        ));
+        return;
+      }
       final fees = await _repository.getFees(event.studentId);
       final payments = await _repository.getFeePayments(event.studentId);
       emit(ParentFeesLoaded(fees, payments, _repository.getSchoolAccount()));
     } catch (e) {
-      emit(const ParentFeesError('Failed to load fee details.'));
+      emit(ParentFeesError(e.toString()));
     }
   }
 
@@ -493,13 +600,25 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
   ) async {
     emit(const ParentFeeSubmitting());
     try {
+      if (feeRepository != null) {
+        await feeRepository!.submitPaymentVerification(
+          studentId: event.studentId,
+          amount: event.payment.amount,
+          paymentMethod: 'Bank Transfer',
+          transactionId: event.payment.referenceNumber ??
+              'TXN-${DateTime.now().millisecondsSinceEpoch}',
+          attachment: event.payment.screenshotName,
+          notes: event.payment.verificationRemarks,
+        );
+        emit(ParentFeeSubmitted(event.payment));
+        add(LoadFees(event.studentId));
+        return;
+      }
       final saved = await _repository.submitFeePayment(event.payment);
       emit(ParentFeeSubmitted(saved));
-      final fees = await _repository.getFees(event.studentId);
-      final payments = await _repository.getFeePayments(event.studentId);
-      emit(ParentFeesLoaded(fees, payments, _repository.getSchoolAccount()));
+      add(LoadFees(event.studentId));
     } catch (e) {
-      emit(const ParentFeesError('Failed to submit payment. Please try again.'));
+      emit(ParentFeesError(e.toString()));
     }
   }
 
@@ -511,10 +630,15 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
   ) async {
     emit(const ParentCalendarLoading());
     try {
+      if (calendarRepository != null) {
+        final events = await calendarRepository!.getEvents();
+        emit(ParentCalendarLoaded(events));
+        return;
+      }
       final events = await _repository.getAcademicCalendar();
       emit(ParentCalendarLoaded(events));
     } catch (e) {
-      emit(const ParentError('Failed to load academic calendar.'));
+      emit(ParentError(e.toString()));
     }
   }
 

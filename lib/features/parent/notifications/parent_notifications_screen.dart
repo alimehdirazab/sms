@@ -21,7 +21,7 @@ class _ParentNotificationsScreenState
   @override
   void initState() {
     super.initState();
-    context.read<ParentBloc>().add(LoadNotifications());
+    context.read<ParentBloc>().add(const LoadNotifications());
   }
 
   @override
@@ -38,6 +38,18 @@ class _ParentNotificationsScreenState
             letterSpacing: -0.02 * 24,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.done_all_rounded, size: 20),
+            tooltip: 'Mark all as read',
+            onPressed: () {
+              context.read<ParentBloc>().add(const MarkAllNotificationsAsRead());
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Marked all as read')),
+              );
+            },
+          ),
+        ],
       ),
       body: BlocBuilder<ParentBloc, ParentState>(
         buildWhen: (_, state) =>
@@ -52,7 +64,7 @@ class _ParentNotificationsScreenState
             return AppErrorWidget(
               message: state.message,
               onRetry: () {
-                context.read<ParentBloc>().add(LoadNotifications());
+                context.read<ParentBloc>().add(const LoadNotifications());
               },
             );
           }
@@ -74,7 +86,7 @@ class _ParentNotificationsScreenState
             return RefreshIndicator(
               color: AppColors.accent,
               onRefresh: () async {
-                context.read<ParentBloc>().add(LoadNotifications());
+                context.read<ParentBloc>().add(const LoadNotifications());
               },
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -133,90 +145,102 @@ class _NotificationTile extends StatelessWidget {
         child: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
       ),
       onDismissed: (_) {
+        context.read<ParentBloc>().add(MarkNotificationAsRead(notification.id));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Notification dismissed')),
+          const SnackBar(content: Text('Notification marked as read')),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border, width: 1),
-          boxShadow: AppShadows.subtle,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceInset,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                border: Border.all(color: AppColors.border, width: 1),
-              ),
-              child: Icon(
-                _typeIcon(notification.type),
-                color: _typeColor(notification.type),
-                size: 18,
-              ),
+      child: InkWell(
+        onTap: () {
+          if (!notification.isRead) {
+            context.read<ParentBloc>().add(MarkNotificationAsRead(notification.id));
+          }
+        },
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: notification.isRead ? AppColors.surface : AppColors.surfaceInset,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: notification.isRead ? AppColors.border : AppColors.accent,
+              width: notification.isRead ? 1 : 1.5,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          notification.title,
-                          style: GoogleFonts.poppins(
-                            fontWeight: notification.isRead
-                                ? FontWeight.w500
-                                : FontWeight.w600,
-                            fontSize: 13,
-                            color: AppColors.ink,
+            boxShadow: AppShadows.subtle,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceInset,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(color: AppColors.border, width: 1),
+                ),
+                child: Icon(
+                  _typeIcon(notification.type),
+                  color: _typeColor(notification.type),
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            notification.title,
+                            style: GoogleFonts.poppins(
+                              fontWeight: notification.isRead
+                                  ? FontWeight.w500
+                                  : FontWeight.w600,
+                              fontSize: 13,
+                              color: AppColors.ink,
+                            ),
                           ),
                         ),
-                      ),
-                      if (!notification.isRead) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: AppColors.accent,
-                            shape: BoxShape.circle,
+                        if (!notification.isRead) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: AppColors.accent,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    notification.message,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: AppColors.inkSecondary,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormatter.formatTime(notification.date),
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: AppColors.inkMuted,
+                    const SizedBox(height: 3),
+                    Text(
+                      notification.message,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.inkSecondary,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormatter.formatTime(notification.date),
+                      style: GoogleFonts.poppins(
+                        fontSize: 11,
+                        color: AppColors.inkMuted,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

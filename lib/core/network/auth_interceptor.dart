@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:dio/dio.dart';
 import '../storage/session_storage_service.dart';
 import 'api_constants.dart';
@@ -32,9 +33,17 @@ class AuthInterceptor extends QueuedInterceptor {
 
     if (!isPublic) {
       final token = await storageService.getAccessToken();
-      if (token != null && token.isNotEmpty) {
-        options.headers['Authorization'] = 'Bearer $token';
+      if (token == null || token.isEmpty) {
+        log('⛔ [AuthInterceptor] Prevented pre-login API call to "$path" (No active access token).');
+        return handler.reject(
+          DioException(
+            requestOptions: options,
+            type: DioExceptionType.cancel,
+            error: 'Cannot call authenticated API before login. Access token is missing.',
+          ),
+        );
       }
+      options.headers['Authorization'] = 'Bearer $token';
     }
 
     return handler.next(options);
@@ -52,6 +61,12 @@ class AuthInterceptor extends QueuedInterceptor {
     if (response?.statusCode == 401 &&
         !requestOptions.path.contains(ApiConstants.login) &&
         !requestOptions.path.contains(ApiConstants.refresh)) {
+      final refreshToken = await storageService.getRefreshToken();
+      if (refreshToken == null || refreshToken.isEmpty) {
+        // User is not logged in; do not attempt refresh loop
+        return handler.next(err);
+      }
+
       try {
         final newAccessToken = await _handleTokenRefresh();
 

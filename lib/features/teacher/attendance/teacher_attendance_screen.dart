@@ -273,12 +273,13 @@ class _AttendanceCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Row(
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
                   children: [
                     _buildTimeChip(
                       'In: ${record.checkInTime != null ? DateFormatter.formatTime(record.checkInTime!) : '--'}',
                     ),
-                    const SizedBox(width: 8),
                     _buildTimeChip(
                       'Out: ${record.checkOutTime != null ? DateFormatter.formatTime(record.checkOutTime!) : '--'}',
                     ),

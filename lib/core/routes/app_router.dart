@@ -18,6 +18,9 @@ import '../../features/parent/calendar/parent_calendar_screen.dart';
 import '../../features/teacher/calendar/teacher_calendar_screen.dart';
 import '../../features/teacher/schedule/teacher_weekly_schedule_screen.dart';
 import '../../features/teacher/leave/teacher_leave_screen.dart';
+import '../../features/teacher/notifications/teacher_notifications_screen.dart';
+import '../../features/parent/announcements/parent_announcements_screen.dart';
+import '../../features/teacher/announcements/teacher_announcements_screen.dart';
 import '../../core/theme/app_colors.dart';
 
 class RouteNames {
@@ -33,6 +36,8 @@ class RouteNames {
   static const teacherAttendance = 'teacherAttendance';
   static const teacherMarks = 'teacherMarks';
   static const teacherProfile = 'teacherProfile';
+  static const teacherNotifications = 'teacherNotifications';
+  static const teacherAnnouncements = 'teacherAnnouncements';
   static const teacherLeave = 'teacherLeave';
   static const teacherApiLeaves = 'teacherApiLeaves';
   static const teacherCalendar = 'teacherCalendar';
@@ -41,6 +46,7 @@ class RouteNames {
   static const parentHome = 'parentHome';
   static const parentMarks = 'parentMarks';
   static const parentNotifications = 'parentNotifications';
+  static const parentAnnouncements = 'parentAnnouncements';
   static const parentProfile = 'parentProfile';
   static const parentLeave = 'parentLeave';
   static const parentApiLeaves = 'parentApiLeaves';
@@ -159,6 +165,24 @@ final appRouter = GoRouter(
                     state: state,
                   ),
                 ),
+                GoRoute(
+                  path: 'notifications',
+                  name: RouteNames.teacherNotifications,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const TeacherNotificationsScreen(),
+                    state: state,
+                  ),
+                ),
+                GoRoute(
+                  path: 'announcements',
+                  name: RouteNames.teacherAnnouncements,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const TeacherAnnouncementsScreen(),
+                    state: state,
+                  ),
+                ),
               ],
             ),
           ],
@@ -241,6 +265,15 @@ final appRouter = GoRouter(
                   parentNavigatorKey: _rootNavigatorKey,
                   pageBuilder: (context, state) => _buildPageWithTransition(
                     child: const ParentCalendarScreen(),
+                    state: state,
+                  ),
+                ),
+                GoRoute(
+                  path: 'announcements',
+                  name: RouteNames.parentAnnouncements,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const ParentAnnouncementsScreen(),
                     state: state,
                   ),
                 ),

@@ -64,6 +64,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Announcements',
+            icon: const Icon(Icons.campaign_outlined, size: 20),
+            onPressed: () =>
+                context.pushNamed(RouteNames.teacherAnnouncements),
+          ),
+          IconButton(
             tooltip: 'Weekly timetable',
             icon: const Icon(Icons.calendar_view_week_rounded, size: 20),
             onPressed: () =>
@@ -78,8 +84,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 alignment: Alignment.center,
                 children: [
                   IconButton(
+                    tooltip: 'Campus notifications',
                     icon: const Icon(Icons.notifications_none_rounded, size: 20),
-                    onPressed: () {},
+                    onPressed: () =>
+                        context.pushNamed(RouteNames.teacherNotifications),
                   ),
                   if (count > 0)
                     Positioned(
@@ -226,20 +234,28 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             onTap: () => context.pushNamed(RouteNames.teacherLeave),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
           child: _QuickAction(
             icon: Icons.calendar_view_week_outlined,
-            label: 'Weekly timetable',
+            label: 'Timetable',
             onTap: () => context.pushNamed(RouteNames.teacherWeeklySchedule),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
           child: _QuickAction(
             icon: Icons.calendar_month_outlined,
             label: 'Calendar',
             onTap: () => context.pushNamed(RouteNames.teacherCalendar),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickAction(
+            icon: Icons.campaign_outlined,
+            label: 'Notices',
+            onTap: () => context.pushNamed(RouteNames.teacherAnnouncements),
           ),
         ),
       ],
@@ -506,9 +522,29 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         return;
       }
 
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                SizedBox(width: 12),
+                Text('Acquiring real-time GPS location...'),
+              ],
+            ),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+
       final loc = await locationService.getCurrentRealLocation();
 
       if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       context.read<TeacherBloc>().add(
             PerformCheckIn(
@@ -518,8 +554,32 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               selfieFile: selfieFile,
             ),
           );
+    } on LocationException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: AppColors.danger,
+            action: e.isServiceDisabled
+                ? SnackBarAction(
+                    label: 'Turn on GPS',
+                    textColor: Colors.white,
+                    onPressed: () => locationService.openLocationSettings(),
+                  )
+                : (e.isPermanentlyDenied
+                    ? SnackBarAction(
+                        label: 'Settings',
+                        textColor: Colors.white,
+                        onPressed: () => locationService.openAppSettings(),
+                      )
+                    : null),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst('Exception: ', '')),
@@ -533,8 +593,29 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Future<void> _handleCheckOutFlow() async {
     final locationService = LocationAndSelfieService();
     try {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                SizedBox(width: 12),
+                Text('Verifying real-time GPS for check-out...'),
+              ],
+            ),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+
       final loc = await locationService.getCurrentRealLocation();
       if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
       context.read<TeacherBloc>().add(
             PerformCheckOut(
               latitude: loc.latitude,
@@ -542,8 +623,32 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               accuracy: loc.accuracy,
             ),
           );
+    } on LocationException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: AppColors.danger,
+            action: e.isServiceDisabled
+                ? SnackBarAction(
+                    label: 'Turn on GPS',
+                    textColor: Colors.white,
+                    onPressed: () => locationService.openLocationSettings(),
+                  )
+                : (e.isPermanentlyDenied
+                    ? SnackBarAction(
+                        label: 'Settings',
+                        textColor: Colors.white,
+                        onPressed: () => locationService.openAppSettings(),
+                      )
+                    : null),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst('Exception: ', '')),
@@ -560,9 +665,25 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       listenWhen: (_, state) =>
           state is TeacherCheckInSuccess ||
           state is TeacherCheckInError ||
-          state is TeacherLateCommentSaved,
+          state is TeacherLateCommentSaved ||
+          state is TeacherAttendanceLoaded,
       listener: (context, state) {
-        if (state is TeacherCheckInSuccess) {
+        if (state is TeacherAttendanceLoaded && state.records.isNotEmpty) {
+          final now = DateTime.now();
+          final todayRecord = state.records.cast<AttendanceModel?>().firstWhere(
+            (r) =>
+                r != null &&
+                r.date.year == now.year &&
+                r.date.month == now.month &&
+                r.date.day == now.day,
+            orElse: () => null,
+          );
+          if (todayRecord != null) {
+            setState(() {
+              _isCheckedIn = todayRecord.checkInTime != null && todayRecord.checkOutTime == null;
+            });
+          }
+        } else if (state is TeacherCheckInSuccess) {
           final wasLate = _pendingLateComment;
           setState(() {
             _isCheckedIn = state.checkedIn;

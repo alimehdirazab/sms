@@ -56,9 +56,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Leave applications',
-            icon: const Icon(Icons.event_note_rounded, size: 20),
-            onPressed: () => context.pushNamed(RouteNames.parentLeave),
+            tooltip: 'Announcements',
+            icon: const Icon(Icons.campaign_outlined, size: 22),
+            onPressed: () => context.pushNamed(RouteNames.parentAnnouncements),
+          ),
+          IconButton(
+            tooltip: 'Notifications',
+            icon: const Icon(Icons.notifications_outlined, size: 22),
+            onPressed: () => context.pushNamed(RouteNames.parentNotifications),
           ),
         ],
       ),
@@ -135,7 +140,9 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                     const SizedBox(height: 16),
 
                     _buildQuickActions(),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 14),
+
+                    _buildFeeAlert(),
 
                     _buildStatsSnapshot(),
                     const SizedBox(height: 18),
@@ -153,9 +160,6 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                     const SizedBox(height: 16),
 
                     _buildCalendarPreview(),
-                    const SizedBox(height: 16),
-
-                    _buildFeeAlert(),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -228,7 +232,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             onTap: () => context.pushNamed(RouteNames.parentLeave),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
           child: _QuickAction(
             icon: Icons.payments_outlined,
@@ -236,12 +240,20 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             onTap: () => context.pushNamed(RouteNames.parentFees),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
           child: _QuickAction(
             icon: Icons.calendar_month_outlined,
             label: 'Calendar',
             onTap: () => context.pushNamed(RouteNames.parentCalendar),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _QuickAction(
+            icon: Icons.campaign_outlined,
+            label: 'Notices',
+            onTap: () => context.pushNamed(RouteNames.parentAnnouncements),
           ),
         ),
       ],
@@ -645,109 +657,133 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
 
   Widget _buildFeeAlert() {
     return BlocBuilder<ParentBloc, ParentState>(
-      buildWhen: (_, state) => state is ParentFeesLoaded,
+      buildWhen: (_, state) =>
+          state is ParentFeesLoaded ||
+          state is ParentFeesLoading ||
+          state is ParentFeesError,
       builder: (context, state) {
         if (state is! ParentFeesLoaded) {
-          return const ShimmerCard(height: 100);
+          return const SizedBox.shrink();
         }
         final outstanding = state.totalOutstanding;
+        // ONLY show when there is real fee due (> 0)
+        if (outstanding <= 0) {
+          return const SizedBox.shrink();
+        }
         final pendingPayments =
             state.payments.where((p) => p.status.name == 'pending').toList();
-        final isClear = outstanding <= 0;
 
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(
-              color: isClear ? AppColors.successBorder : AppColors.warningBorder,
-              width: 1,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                color: AppColors.warningBorder,
+                width: 1,
+              ),
+              boxShadow: AppShadows.subtle,
             ),
-            boxShadow: AppShadows.subtle,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isClear ? Icons.check_circle_outline_rounded : Icons.warning_amber_rounded,
-                    color: isClear ? AppColors.success : AppColors.warning,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isClear ? 'All dues settled' : 'Fee due alert',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            color: AppColors.ink,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.warningBg,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(color: AppColors.warningBorder, width: 1),
+                      ),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
+                        color: AppColors.warning,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Fee due alert',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: AppColors.ink,
+                            ),
                           ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Rs. ${outstanding.toStringAsFixed(0)} outstanding for this child',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: AppColors.inkSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        minimumSize: const Size(0, 34),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          isClear
-                              ? 'All tuition fees are paid. Thank you!'
-                              : 'Rs. ${outstanding.toStringAsFixed(0)} outstanding',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: AppColors.inkMuted,
+                      ),
+                      onPressed: () =>
+                          context.pushNamed(RouteNames.parentFees),
+                      child: const Text('Pay now',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+                if (pendingPayments.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningBg,
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
+                      border:
+                          Border.all(color: AppColors.warningBorder, width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.hourglass_top_rounded,
+                          size: 14,
+                          color: AppColors.warning,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${pendingPayments.length} payment(s) pending verification by accounts office.',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: AppColors.inkSecondary,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  if (!isClear)
-                    FilledButton(
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        minimumSize: const Size(0, 36),
-                      ),
-                      onPressed: () =>
-                          context.pushNamed(RouteNames.parentFees),
-                      child: const Text('Pay now'),
-                    ),
                 ],
-              ),
-              if (pendingPayments.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.warningBg,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    border: Border.all(color: AppColors.warningBorder, width: 1),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.hourglass_top_rounded,
-                        size: 16,
-                        color: AppColors.warning,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${pendingPayments.length} payment(s) pending verification by accounts office.',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.warning,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
-            ],
+            ),
           ),
         );
       },

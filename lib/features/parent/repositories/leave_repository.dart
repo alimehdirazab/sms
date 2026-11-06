@@ -8,6 +8,15 @@ class LeaveRepository {
 
   LeaveRepository({required this.apiClient});
 
+  /// Check if a string is a valid UUID format
+  static bool isValidUuid(String? id) {
+    if (id == null || id.isEmpty) return false;
+    final uuidRegex = RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    );
+    return uuidRegex.hasMatch(id.trim());
+  }
+
   /// 1. POST /leaves (Teacher leave application)
   Future<LeaveItemModel> createTeacherLeave({
     required String leaveType,
@@ -17,24 +26,30 @@ class LeaveRepository {
     String? attachment,
   }) async {
     try {
+      final payload = <String, dynamic>{
+        'leaveType': leaveType,
+        'startDate': startDate,
+        'endDate': endDate,
+        'description': description,
+      };
+      if (attachment != null &&
+          attachment.isNotEmpty &&
+          attachment != 'null' &&
+          attachment != 'base64-attachment-demo') {
+        payload['attachment'] = attachment;
+      }
+
       final response = await apiClient.dio.post(
         ApiConstants.leaves,
-        data: {
-          'leaveType': leaveType,
-          'startDate': startDate,
-          'endDate': endDate,
-          'description': description,
-          if (attachment != null && attachment.isNotEmpty)
-            'attachment': attachment,
-        },
+        data: payload,
       );
 
       final data = response.data;
-      final payload = data is Map<String, dynamic>
+      final payloadData = data is Map<String, dynamic>
           ? (data['data'] is Map<String, dynamic> ? data['data'] : data)
           : null;
 
-      return LeaveItemModel.fromJson(payload as Map<String, dynamic>?);
+      return LeaveItemModel.fromJson(payloadData as Map<String, dynamic>?);
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e, 'Failed to submit leave application'));
     } catch (e) {
@@ -48,29 +63,41 @@ class LeaveRepository {
     required String startDate,
     required String endDate,
     required String description,
-    required String studentId,
+    String? studentId,
     String? attachment,
   }) async {
     try {
+      final payload = <String, dynamic>{
+        'leaveType': leaveType,
+        'startDate': startDate,
+        'endDate': endDate,
+        'description': description,
+      };
+
+      // Only include studentId if it's a valid UUID.
+      // If omitted or non-UUID, the backend automatically uses the parent's currently active child.
+      if (studentId != null && isValidUuid(studentId)) {
+        payload['studentId'] = studentId.trim();
+      }
+
+      if (attachment != null &&
+          attachment.isNotEmpty &&
+          attachment != 'null' &&
+          attachment != 'base64-attachment-demo') {
+        payload['attachment'] = attachment;
+      }
+
       final response = await apiClient.dio.post(
         ApiConstants.leaves,
-        data: {
-          'leaveType': leaveType,
-          'startDate': startDate,
-          'endDate': endDate,
-          'description': description,
-          'studentId': studentId,
-          if (attachment != null && attachment.isNotEmpty)
-            'attachment': attachment,
-        },
+        data: payload,
       );
 
       final data = response.data;
-      final payload = data is Map<String, dynamic>
+      final payloadData = data is Map<String, dynamic>
           ? (data['data'] is Map<String, dynamic> ? data['data'] : data)
           : null;
 
-      return LeaveItemModel.fromJson(payload as Map<String, dynamic>?);
+      return LeaveItemModel.fromJson(payloadData as Map<String, dynamic>?);
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e, 'Failed to submit student leave application'));
     } catch (e) {
@@ -104,7 +131,9 @@ class LeaveRepository {
         queryParams['aplicantType'] = typeVal;
         queryParams['applicantType'] = typeVal;
       }
-      if (studentId != null && studentId.isNotEmpty) queryParams['studentId'] = studentId;
+      if (studentId != null && isValidUuid(studentId)) {
+        queryParams['studentId'] = studentId.trim();
+      }
 
       final response = await apiClient.dio.get(
         ApiConstants.leaves,
@@ -194,9 +223,18 @@ class LeaveRepository {
   String _extractErrorMessage(DioException e, String fallback) {
     if (e.response?.data is Map<String, dynamic>) {
       final data = e.response!.data as Map<String, dynamic>;
-      return data['message']?.toString() ??
-          data['error']?.toString() ??
-          fallback;
+      final msg = data['message'];
+      if (msg is List && msg.isNotEmpty) {
+        return msg.join(', ');
+      }
+      if (msg is String && msg.isNotEmpty) {
+        return msg;
+      }
+      final err = data['error'];
+      if (err is String && err.isNotEmpty) {
+        return err;
+      }
+      return fallback;
     }
     return e.message ?? fallback;
   }

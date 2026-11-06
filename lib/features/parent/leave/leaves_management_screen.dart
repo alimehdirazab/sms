@@ -6,9 +6,12 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/shimmer_loading.dart';
+import '../../auth/models/user_model.dart';
 import '../../shared/widgets/stat_card.dart';
 import '../bloc/leave_bloc.dart';
+import '../bloc/parent_bloc.dart';
 import '../models/leave_api_model.dart';
+import '../repositories/leave_repository.dart';
 
 class LeavesManagementScreen extends StatefulWidget {
   final bool isTeacher;
@@ -56,7 +59,7 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
           LoadLeavesRequested(
             status: status,
             page: page,
-            applicantType: widget.isTeacher ? 'TEACHER' : null,
+            applicantType: widget.isTeacher ? 'TEACHER' : 'STUDENT',
             studentId: widget.studentId,
             search: _searchController.text.trim().isEmpty
                 ? null
@@ -188,7 +191,14 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(state.actionSuccessMessage!),
-                      backgroundColor: AppColors.success,
+                      backgroundColor: AppColors.ink,
+                    ),
+                  );
+                } else if (state is LeaveLoaded && state.actionErrorMessage != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.actionErrorMessage!),
+                      backgroundColor: AppColors.danger,
                     ),
                   );
                 } else if (state is LeaveError) {
@@ -216,14 +226,16 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                   final items = state.leaves;
                   if (items.isEmpty) {
                     return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 64,
-                              height: 64,
+                              width: 52,
+                              height: 52,
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceInset,
                                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -232,11 +244,11 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                               alignment: Alignment.center,
                               child: const Icon(
                                 Icons.event_busy_outlined,
-                                size: 30,
+                                size: 26,
                                 color: AppColors.inkMuted,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             Text(
                               'No leaves found',
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -374,7 +386,7 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      '${item.startDate} → ${item.endDate}',
+                      _formatDateRange(item.startDate, item.endDate),
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.inkSecondary,
@@ -532,7 +544,7 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
               const SizedBox(height: 4),
               _detailRow('Leave type', item.leaveType),
               _detailRow('Status', item.status.displayName),
-              _detailRow('Duration', '${item.startDate} to ${item.endDate}'),
+              _detailRow('Duration', _formatDateRange(item.startDate, item.endDate)),
               if (item.studentId != null && item.studentId!.isNotEmpty)
                 _detailRow('Student ID', item.studentId!),
               if (item.applicantType.isNotEmpty)
@@ -546,6 +558,25 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
         );
       },
     );
+  }
+
+  String _formatDateRange(String? start, String? end) {
+    if (start == null || start.trim().isEmpty) return '—';
+    try {
+      final s = DateTime.parse(start.trim());
+      final formattedStart = DateFormat('dd MMM yyyy').format(s);
+      if (end == null || end.trim().isEmpty || end.trim() == start.trim()) {
+        return formattedStart;
+      }
+      final e = DateTime.parse(end.trim());
+      final formattedEnd = DateFormat('dd MMM yyyy').format(e);
+      return '$formattedStart → $formattedEnd';
+    } catch (_) {
+      if (end != null && end.isNotEmpty && end != start) {
+        return '$start → $end';
+      }
+      return start;
+    }
   }
 
   Widget _detailRow(String label, String value) {
@@ -698,7 +729,25 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
   void _openApplyLeaveModal() {
     final leaveTypeController = TextEditingController(text: 'Casual Leave');
     final descController = TextEditingController();
-    final studentIdController = TextEditingController(text: widget.studentId ?? '768-9876');
+
+    // Resolve children and active child ID for parent flow
+    final parentBlocState = context.read<ParentBloc>().state;
+    List<StudentModel> children = [];
+    String? selectedStudentId;
+
+    if (!widget.isTeacher && parentBlocState is ParentProfileLoaded) {
+      children = parentBlocState.profile.children;
+      if (children.isNotEmpty) {
+        if (widget.studentId != null && LeaveRepository.isValidUuid(widget.studentId)) {
+          selectedStudentId = widget.studentId;
+        } else if (parentBlocState.selectedChildIndex < children.length) {
+          selectedStudentId = children[parentBlocState.selectedChildIndex].id;
+        } else {
+          selectedStudentId = children.first.id;
+        }
+      }
+    }
+
     DateTime startDate = DateTime.now().add(const Duration(days: 1));
     DateTime endDate = DateTime.now().add(const Duration(days: 2));
 
@@ -773,14 +822,27 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                         if (val != null) leaveTypeController.text = val;
                       },
                     ),
-                    if (!widget.isTeacher) ...[
+                    if (!widget.isTeacher && children.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      TextField(
-                        controller: studentIdController,
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedStudentId,
                         decoration: const InputDecoration(
-                          labelText: 'Student ID',
-                          hintText: 'e.g. 768-9876',
+                          labelText: 'Select student',
                         ),
+                        items: children.map((c) {
+                          final label = c.className.isNotEmpty
+                              ? '${c.name} (${c.className})'
+                              : c.name;
+                          return DropdownMenuItem<String>(
+                            value: c.id,
+                            child: Text(label),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          setModalState(() {
+                            selectedStudentId = val;
+                          });
+                        },
                       ),
                     ],
                     const SizedBox(height: 12),
@@ -886,7 +948,6 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                                   startDate: dateFormat.format(startDate),
                                   endDate: dateFormat.format(endDate),
                                   description: descController.text.trim(),
-                                  attachment: 'base64-attachment-demo',
                                 ),
                               );
                         } else {
@@ -896,8 +957,7 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                                   startDate: dateFormat.format(startDate),
                                   endDate: dateFormat.format(endDate),
                                   description: descController.text.trim(),
-                                  studentId: studentIdController.text.trim(),
-                                  attachment: 'base64-attachment-demo',
+                                  studentId: selectedStudentId,
                                 ),
                               );
                         }

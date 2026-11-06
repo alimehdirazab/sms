@@ -16,14 +16,15 @@ class AppErrorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 52,
-              height: 52,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: AppColors.dangerBg,
                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -31,21 +32,21 @@ class AppErrorWidget extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.error_outline_rounded,
-                size: 26,
+                size: 24,
                 color: AppColors.danger,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               'Something went wrong',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColors.ink,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 320),
               child: Text(
@@ -59,13 +60,13 @@ class AppErrorWidget extends StatelessWidget {
               ),
             ),
             if (onRetry != null) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh_rounded, size: 16),
                 label: const Text('Try again'),
                 style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(120, 40),
+                  minimumSize: const Size(120, 38),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.sm),

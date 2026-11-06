@@ -76,6 +76,8 @@ class TodayTimetableModel extends Equatable {
   final String date;
   final List<TimetablePeriodModel> classes;
 
+  List<TimetablePeriodModel> get periods => classes;
+
   const TodayTimetableModel({
     this.day = '',
     this.date = '',

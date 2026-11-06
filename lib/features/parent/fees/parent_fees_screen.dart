@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../bloc/parent_bloc.dart';
 import '../../../core/theme/app_colors.dart';
@@ -176,6 +178,8 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildOutstandingSummary(state),
+                                const SizedBox(height: 16),
+                                _buildBankDetailsSection(state, child),
                                 const SizedBox(height: 20),
                                 Text(
                                   'Fee dues',
@@ -272,6 +276,83 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBankDetailsSection(ParentFeesLoaded state, StudentModel child) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.border, width: 1),
+        boxShadow: AppShadows.subtle,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.accentTint,
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(Icons.account_balance_outlined, size: 18, color: AppColors.accent),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Official school bank details',
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ],
+              ),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.upload_file_outlined, size: 14),
+                label: const Text('Submit proof', style: TextStyle(fontSize: 11)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.accent,
+                  side: const BorderSide(color: AppColors.border),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: const Size(0, 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                ),
+                onPressed: () {
+                  final feeToPay = state.fees.firstWhere(
+                    (f) => !f.isFullyPaid,
+                    orElse: () => state.fees.isNotEmpty
+                        ? state.fees.first
+                        : FeeModel(
+                            id: '',
+                            studentId: child.id,
+                            title: 'Tuition Fee',
+                            description: 'Tuition & Academic Dues',
+                            amount: state.totalOutstanding > 0 ? state.totalOutstanding : 15000,
+                            paidAmount: 0,
+                            dueDate: DateTime.now().add(const Duration(days: 15)),
+                          ),
+                  );
+                  _openPaymentSheet(child, feeToPay, state.account);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _AccountDetailsCard(account: state.account),
+        ],
+      ),
     );
   }
 
@@ -489,13 +570,36 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
     super.dispose();
   }
 
-  void _attachScreenshot() {
+  Future<void> _attachScreenshot() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        final base64Image = base64Encode(bytes);
+        setState(() {
+          _screenshotName = 'data:image/jpeg;base64,$base64Image';
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Deposit slip image attached successfully.')),
+          );
+        }
+        return;
+      }
+    } catch (_) {}
+
     setState(() {
-      _screenshotName = 'deposit_slip_${DateTime.now().second}.png';
+      _screenshotName = 'deposit_slip_${DateTime.now().millisecondsSinceEpoch}.png';
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Deposit slip screenshot attached.')),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Deposit slip attached.')),
+      );
+    }
   }
 
   void _submit() {
@@ -913,12 +1017,39 @@ class _PaymentHistoryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Wrap(
               spacing: 12,
-              runSpacing: 4,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 if (payment.referenceNumber != null)
                   _meta(Icons.confirmation_number_outlined, payment.referenceNumber!),
-                if (payment.screenshotName != null)
-                  _meta(Icons.image_outlined, payment.screenshotName!),
+                if (payment.screenshotName != null && payment.screenshotName!.isNotEmpty)
+                  InkWell(
+                    onTap: () => _showReceiptViewer(
+                      context,
+                      payment.screenshotName!,
+                      payment.referenceNumber,
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.receipt_long_outlined, size: 14, color: AppColors.accent),
+                          const SizedBox(width: 4),
+                          Text(
+                            'View deposit slip',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.accent,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ],
@@ -939,6 +1070,153 @@ class _PaymentHistoryCard extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  void _showReceiptViewer(
+    BuildContext context,
+    String imageUrl,
+    String? refNumber,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final isNetwork =
+            imageUrl.startsWith('http://') || imageUrl.startsWith('https://');
+        final isBase64 =
+            imageUrl.startsWith('data:image') || imageUrl.length > 250;
+
+        Widget imageWidget;
+        if (isNetwork) {
+          imageWidget = Image.network(
+            imageUrl,
+            fit: BoxFit.contain,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) =>
+                _placeholderImage(imageUrl, refNumber),
+          );
+        } else if (isBase64) {
+          try {
+            final cleanBase64 =
+                imageUrl.contains(',') ? imageUrl.split(',').last : imageUrl;
+            imageWidget = Image.memory(
+              base64Decode(cleanBase64),
+              fit: BoxFit.contain,
+            );
+          } catch (_) {
+            imageWidget = _placeholderImage(imageUrl, refNumber);
+          }
+        } else {
+          imageWidget = _placeholderImage(imageUrl, refNumber);
+        }
+
+        return Dialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg)),
+          insetPadding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.receipt_long_outlined,
+                            size: 18, color: AppColors.accent),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Deposit slip proof',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                      color: AppColors.inkMuted,
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.55,
+                ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(AppRadius.lg)),
+                  child: SingleChildScrollView(
+                    child: Center(child: imageWidget),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _placeholderImage(String fileName, String? refNumber) {
+    return Container(
+      padding: const EdgeInsets.all(28),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceInset,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.image_outlined,
+                size: 36, color: AppColors.accent),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            fileName.length > 35
+                ? '${fileName.substring(0, 32)}...'
+                : fileName,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.ink),
+          ),
+          if (refNumber != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Ref: $refNumber',
+              style: GoogleFonts.poppins(
+                  fontSize: 11, color: AppColors.inkSecondary),
+            ),
+          ],
+          const SizedBox(height: 4),
+          Text(
+            'Deposit receipt attached to submission',
+            style: GoogleFonts.poppins(fontSize: 11, color: AppColors.inkMuted),
+          ),
         ],
       ),
     );

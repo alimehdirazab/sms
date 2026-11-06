@@ -29,6 +29,7 @@ class LeaveLoaded extends LeaveState {
   final String? activeStudentId;
   final bool isSubmitting;
   final String? actionSuccessMessage;
+  final String? actionErrorMessage;
 
   const LeaveLoaded({
     required this.leaves,
@@ -40,6 +41,7 @@ class LeaveLoaded extends LeaveState {
     this.activeStudentId,
     this.isSubmitting = false,
     this.actionSuccessMessage,
+    this.actionErrorMessage,
   });
 
   LeaveLoaded copyWith({
@@ -52,6 +54,7 @@ class LeaveLoaded extends LeaveState {
     String? activeStudentId,
     bool? isSubmitting,
     String? actionSuccessMessage,
+    String? actionErrorMessage,
   }) {
     return LeaveLoaded(
       leaves: leaves ?? this.leaves,
@@ -63,6 +66,7 @@ class LeaveLoaded extends LeaveState {
       activeStudentId: activeStudentId ?? this.activeStudentId,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       actionSuccessMessage: actionSuccessMessage,
+      actionErrorMessage: actionErrorMessage,
     );
   }
 
@@ -77,6 +81,7 @@ class LeaveLoaded extends LeaveState {
         activeStudentId,
         isSubmitting,
         actionSuccessMessage,
+        actionErrorMessage,
       ];
 }
 
@@ -140,7 +145,7 @@ class CreateParentLeaveRequested extends LeaveEvent {
   final String startDate;
   final String endDate;
   final String description;
-  final String studentId;
+  final String? studentId;
   final String? attachment;
 
   const CreateParentLeaveRequested({
@@ -148,7 +153,7 @@ class CreateParentLeaveRequested extends LeaveEvent {
     required this.startDate,
     required this.endDate,
     required this.description,
-    required this.studentId,
+    this.studentId,
     this.attachment,
   });
 
@@ -234,6 +239,7 @@ class LeaveBloc extends Bloc<LeaveEvent, LeaveState> {
       if (currentState is LeaveLoaded && event.page > 1) {
         emit(currentState.copyWith(
           actionSuccessMessage: null,
+          actionErrorMessage: null,
         ));
       } else {
         emit(LeaveError(message: e.toString().replaceFirst('Exception: ', '')));
@@ -261,10 +267,25 @@ class LeaveBloc extends Bloc<LeaveEvent, LeaveState> {
         attachment: event.attachment,
       );
 
+      if (currentState is LeaveLoaded) {
+        emit(currentState.copyWith(
+          isSubmitting: false,
+          actionSuccessMessage: 'Leave application submitted successfully',
+        ));
+      }
+
       // Re-fetch leaves on success
-      add(const LoadLeavesRequested());
+      add(const LoadLeavesRequested(applicantType: 'TEACHER'));
     } catch (e) {
-      emit(LeaveError(message: e.toString().replaceFirst('Exception: ', '')));
+      final errorMsg = e.toString().replaceFirst('Exception: ', '');
+      if (currentState is LeaveLoaded) {
+        emit(currentState.copyWith(
+          isSubmitting: false,
+          actionErrorMessage: errorMsg,
+        ));
+      } else {
+        emit(LeaveError(message: errorMsg));
+      }
     }
   }
 
@@ -289,10 +310,28 @@ class LeaveBloc extends Bloc<LeaveEvent, LeaveState> {
         attachment: event.attachment,
       );
 
+      if (currentState is LeaveLoaded) {
+        emit(currentState.copyWith(
+          isSubmitting: false,
+          actionSuccessMessage: 'Student leave application submitted successfully',
+        ));
+      }
+
       // Re-fetch leaves on success
-      add(LoadLeavesRequested(studentId: event.studentId));
+      add(LoadLeavesRequested(
+        applicantType: 'STUDENT',
+        studentId: event.studentId,
+      ));
     } catch (e) {
-      emit(LeaveError(message: e.toString().replaceFirst('Exception: ', '')));
+      final errorMsg = e.toString().replaceFirst('Exception: ', '');
+      if (currentState is LeaveLoaded) {
+        emit(currentState.copyWith(
+          isSubmitting: false,
+          actionErrorMessage: errorMsg,
+        ));
+      } else {
+        emit(LeaveError(message: errorMsg));
+      }
     }
   }
 
@@ -312,13 +351,28 @@ class LeaveBloc extends Bloc<LeaveEvent, LeaveState> {
         reason: event.reason,
       );
 
+      if (currentState is LeaveLoaded) {
+        emit(currentState.copyWith(
+          isSubmitting: false,
+          actionSuccessMessage: 'Leave status updated successfully',
+        ));
+      }
+
       // Refresh list
       final currentFilter = currentState is LeaveLoaded
           ? currentState.currentStatusFilter
           : LeaveStatus.unknown;
       add(LoadLeavesRequested(status: currentFilter));
     } catch (e) {
-      emit(LeaveError(message: e.toString().replaceFirst('Exception: ', '')));
+      final errorMsg = e.toString().replaceFirst('Exception: ', '');
+      if (currentState is LeaveLoaded) {
+        emit(currentState.copyWith(
+          isSubmitting: false,
+          actionErrorMessage: errorMsg,
+        ));
+      } else {
+        emit(LeaveError(message: errorMsg));
+      }
     }
   }
 
@@ -333,12 +387,26 @@ class LeaveBloc extends Bloc<LeaveEvent, LeaveState> {
 
     try {
       await leaveRepository.deleteLeave(event.leaveId);
+      if (currentState is LeaveLoaded) {
+        emit(currentState.copyWith(
+          isSubmitting: false,
+          actionSuccessMessage: 'Leave application deleted',
+        ));
+      }
       final currentFilter = currentState is LeaveLoaded
           ? currentState.currentStatusFilter
           : LeaveStatus.unknown;
       add(LoadLeavesRequested(status: currentFilter));
     } catch (e) {
-      emit(LeaveError(message: e.toString().replaceFirst('Exception: ', '')));
+      final errorMsg = e.toString().replaceFirst('Exception: ', '');
+      if (currentState is LeaveLoaded) {
+        emit(currentState.copyWith(
+          isSubmitting: false,
+          actionErrorMessage: errorMsg,
+        ));
+      } else {
+        emit(LeaveError(message: errorMsg));
+      }
     }
   }
 }

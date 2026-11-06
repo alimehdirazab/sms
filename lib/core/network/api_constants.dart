@@ -22,6 +22,27 @@ class ApiConstants {
   // Parent student switch
   static const String switchStudent = '/parent/switch-student';
 
+  // Parent fees & bank details
+  static const String bankDetails = '/school/bank-details';
+  static const String parentFees = '/parent/fees';
+  static const String submitFeePayment = '/parent/fees/submit-payment';
+
+  // Academic calendar
+  static const String academicCalendarEvents = '/academic-calendar/events';
+  static String academicCalendarEventDetails(String eventId) =>
+      '/academic-calendar/events/$eventId';
+  static const String academicCalendarSessions = '/academic-calendar/sessions';
+
+  // Notifications & FCM
+  static const String notifications = '/notifications';
+  static String markNotificationRead(String id) => '/notifications/$id/read';
+  static const String markAllNotificationsRead = '/notifications/mark-all-read';
+  static const String notificationFcmToken = '/notifications/fcm-token';
+  static const String notificationBroadcast = '/notifications/broadcast';
+
+  // Announcements (Teacher & Parent)
+  static const String announcements = '/announcements';
+
   // Attendance endpoints (Teacher)
   static const String attendanceCheckIn = '/attendance/check-in';
   static const String attendanceCheckOut = '/attendance/check-out';

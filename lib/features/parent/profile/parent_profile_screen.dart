@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/shimmer_loading.dart';
+import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/models/attendance_model.dart';
 import '../../auth/models/user_model.dart';
 import '../bloc/parent_bloc.dart';
@@ -800,6 +801,7 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
+              context.read<AuthBloc>().add(const LogoutRequested());
               context.goNamed(RouteNames.login);
             },
             style: FilledButton.styleFrom(
