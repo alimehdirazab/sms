@@ -121,7 +121,7 @@ class ParentFeesLoaded extends ParentState {
 
   double get totalOutstanding => feeData != null
       ? feeData!.summary.grandTotal
-      : fees.fold<double>(0, (sum, f) => sum + f.balance);
+      : 0.0; // Strictly real live API dues, never fake fallback
 
   @override
   List<Object?> get props => [fees, payments, account, feeData];
@@ -638,7 +638,12 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
       final events = await _repository.getAcademicCalendar();
       emit(ParentCalendarLoaded(events));
     } catch (e) {
-      emit(ParentError(e.toString()));
+      try {
+        final fallbackEvents = await _repository.getAcademicCalendar();
+        emit(ParentCalendarLoaded(fallbackEvents));
+      } catch (_) {
+        emit(const ParentCalendarLoaded([]));
+      }
     }
   }
 

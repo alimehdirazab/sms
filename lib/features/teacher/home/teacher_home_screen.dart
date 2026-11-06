@@ -66,8 +66,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           IconButton(
             tooltip: 'Announcements',
             icon: const Icon(Icons.campaign_outlined, size: 20),
-            onPressed: () =>
-                context.pushNamed(RouteNames.teacherAnnouncements),
+            onPressed: () => context.pushNamed(RouteNames.teacherAnnouncements),
           ),
           IconButton(
             tooltip: 'Weekly timetable',
@@ -78,14 +77,18 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           BlocBuilder<TeacherBloc, TeacherState>(
             buildWhen: (_, state) => state is TeacherNotificationCountLoaded,
             builder: (context, state) {
-              final count =
-                  state is TeacherNotificationCountLoaded ? state.count : 0;
+              final count = state is TeacherNotificationCountLoaded
+                  ? state.count
+                  : 0;
               return Stack(
                 alignment: Alignment.center,
                 children: [
                   IconButton(
                     tooltip: 'Campus notifications',
-                    icon: const Icon(Icons.notifications_none_rounded, size: 20),
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      size: 20,
+                    ),
                     onPressed: () =>
                         context.pushNamed(RouteNames.teacherNotifications),
                   ),
@@ -193,7 +196,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     onPressed: () =>
                         context.pushNamed(RouteNames.teacherWeeklySchedule),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       minimumSize: const Size(0, 28),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -234,28 +240,21 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             onTap: () => context.pushNamed(RouteNames.teacherLeave),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: _QuickAction(
             icon: Icons.calendar_view_week_outlined,
             label: 'Timetable',
-            onTap: () => context.pushNamed(RouteNames.teacherWeeklySchedule),
+            onTap: () =>
+                context.pushNamed(RouteNames.teacherWeeklySchedule),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: _QuickAction(
             icon: Icons.calendar_month_outlined,
             label: 'Calendar',
             onTap: () => context.pushNamed(RouteNames.teacherCalendar),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _QuickAction(
-            icon: Icons.campaign_outlined,
-            label: 'Notices',
-            onTap: () => context.pushNamed(RouteNames.teacherAnnouncements),
           ),
         ),
       ],
@@ -313,7 +312,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.bar_chart_rounded, size: 18, color: AppColors.accent),
+                      const Icon(
+                        Icons.bar_chart_rounded,
+                        size: 18,
+                        color: AppColors.accent,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -375,8 +378,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         }
         if (state.events.isEmpty) return const SizedBox.shrink();
         final now = DateTime.now();
-        final upcoming =
-            state.events.where((e) => e.startsOnOrAfter(now)).take(3).toList();
+        final upcoming = state.events
+            .where((e) => e.startsOnOrAfter(now))
+            .take(3)
+            .toList();
         final toShow = upcoming.isNotEmpty
             ? upcoming
             : state.events.take(3).toList();
@@ -408,7 +413,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     onPressed: () =>
                         context.pushNamed(RouteNames.teacherCalendar),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       minimumSize: const Size(0, 28),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
@@ -432,7 +440,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(
           'Running late?',
-          style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.ink),
+          style: GoogleFonts.instrumentSerif(
+            fontSize: 22,
+            color: AppColors.ink,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -440,7 +451,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           children: [
             Text(
               'You are checking in late. Add a short comment for the record (optional).',
-              style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkSecondary),
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: AppColors.inkSecondary,
+              ),
             ),
             const SizedBox(height: 14),
             TextField(
@@ -463,8 +477,8 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               final comment = controller.text.trim();
               if (comment.isNotEmpty) {
                 context.read<TeacherBloc>().add(
-                      AddLateCheckInComment('att_today', comment),
-                    );
+                  AddLateCheckInComment('att_today', comment),
+                );
               }
               Navigator.pop(ctx);
             },
@@ -483,17 +497,27 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.camera_alt_outlined, color: AppColors.accent, size: 22),
+            const Icon(
+              Icons.camera_alt_outlined,
+              color: AppColors.accent,
+              size: 22,
+            ),
             const SizedBox(width: 8),
             Text(
               'Check-in verification',
-              style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.ink),
+              style: GoogleFonts.instrumentSerif(
+                fontSize: 22,
+                color: AppColors.ink,
+              ),
             ),
           ],
         ),
         content: Text(
           'To check in, the app will verify your real-time GPS location and require a selfie photo as proof of attendance.',
-          style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkSecondary),
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            color: AppColors.inkSecondary,
+          ),
         ),
         actions: [
           TextButton(
@@ -516,7 +540,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       if (selfieFile == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Selfie is mandatory for attendance check-in.')),
+            const SnackBar(
+              content: Text('Selfie is mandatory for attendance check-in.'),
+            ),
           );
         }
         return;
@@ -530,7 +556,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 ),
                 SizedBox(width: 12),
                 Text('Acquiring real-time GPS location...'),
@@ -547,13 +576,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       context.read<TeacherBloc>().add(
-            PerformCheckIn(
-              latitude: loc.latitude,
-              longitude: loc.longitude,
-              accuracy: loc.accuracy,
-              selfieFile: selfieFile,
-            ),
-          );
+        PerformCheckIn(
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          accuracy: loc.accuracy,
+          selfieFile: selfieFile,
+        ),
+      );
     } on LocationException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -568,12 +597,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     onPressed: () => locationService.openLocationSettings(),
                   )
                 : (e.isPermanentlyDenied
-                    ? SnackBarAction(
-                        label: 'Settings',
-                        textColor: Colors.white,
-                        onPressed: () => locationService.openAppSettings(),
-                      )
-                    : null),
+                      ? SnackBarAction(
+                          label: 'Settings',
+                          textColor: Colors.white,
+                          onPressed: () => locationService.openAppSettings(),
+                        )
+                      : null),
           ),
         );
       }
@@ -601,7 +630,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 SizedBox(
                   width: 16,
                   height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 ),
                 SizedBox(width: 12),
                 Text('Verifying real-time GPS for check-out...'),
@@ -617,12 +649,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       context.read<TeacherBloc>().add(
-            PerformCheckOut(
-              latitude: loc.latitude,
-              longitude: loc.longitude,
-              accuracy: loc.accuracy,
-            ),
-          );
+        PerformCheckOut(
+          latitude: loc.latitude,
+          longitude: loc.longitude,
+          accuracy: loc.accuracy,
+        ),
+      );
     } on LocationException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -637,12 +669,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     onPressed: () => locationService.openLocationSettings(),
                   )
                 : (e.isPermanentlyDenied
-                    ? SnackBarAction(
-                        label: 'Settings',
-                        textColor: Colors.white,
-                        onPressed: () => locationService.openAppSettings(),
-                      )
-                    : null),
+                      ? SnackBarAction(
+                          label: 'Settings',
+                          textColor: Colors.white,
+                          onPressed: () => locationService.openAppSettings(),
+                        )
+                      : null),
           ),
         );
       }
@@ -680,7 +712,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           );
           if (todayRecord != null) {
             setState(() {
-              _isCheckedIn = todayRecord.checkInTime != null && todayRecord.checkOutTime == null;
+              _isCheckedIn =
+                  todayRecord.checkInTime != null &&
+                  todayRecord.checkOutTime == null;
             });
           }
         } else if (state is TeacherCheckInSuccess) {
@@ -691,14 +725,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           });
           final message = state.checkedIn
               ? (wasLate
-                  ? 'Checked in (late). Please add a comment.'
-                  : 'Check-in successful! Verified inside campus.')
+                    ? 'Checked in (late). Please add a comment.'
+                    : 'Check-in successful! Verified inside campus.')
               : 'Check-out successful!';
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: AppColors.accent,
-            ),
+            SnackBar(content: Text(message), backgroundColor: AppColors.accent),
           );
           if (state.checkedIn && wasLate) {
             _promptLateComment();
@@ -712,7 +743,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           );
         } else if (state is TeacherLateCommentSaved) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Comment saved to attendance record.')),
+            const SnackBar(
+              content: Text('Comment saved to attendance record.'),
+            ),
           );
         }
       },
@@ -745,7 +778,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      geofenceInside ? 'Inside school zone' : 'Outside school zone',
+                      geofenceInside
+                          ? 'Inside school zone'
+                          : 'Outside school zone',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
@@ -756,10 +791,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     ),
                   ),
                   if (!_isCheckedIn && isLateNow)
-                    StatusDot(
-                      label: 'Late check-in',
-                      color: status.warning,
-                    ),
+                    StatusDot(label: 'Late check-in', color: status.warning),
                 ],
               ),
               const SizedBox(height: 16),
@@ -769,7 +801,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     : (_isCheckedIn ? 'Check out' : 'Check in'),
                 icon: isLoading
                     ? null
-                    : (_isCheckedIn ? Icons.logout_rounded : Icons.login_rounded),
+                    : (_isCheckedIn
+                          ? Icons.logout_rounded
+                          : Icons.login_rounded),
                 onPressed: isLoading
                     ? null
                     : () {
@@ -780,10 +814,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                           _handleCheckInFlow();
                         }
                       },
-                backgroundColor:
-                    _isCheckedIn ? AppColors.surface : AppColors.accent,
-                foregroundColor:
-                    _isCheckedIn ? AppColors.danger : Colors.white,
+                backgroundColor: _isCheckedIn
+                    ? AppColors.surface
+                    : AppColors.accent,
+                foregroundColor: _isCheckedIn ? AppColors.danger : Colors.white,
                 variant: _isCheckedIn
                     ? EduCoreButtonVariant.destructive
                     : EduCoreButtonVariant.primary,
@@ -792,7 +826,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 const SizedBox(height: 12),
                 Text(
                   'Verifying location & face...',
-                  style: GoogleFonts.poppins(fontSize: 12, color: AppColors.inkMuted),
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.inkMuted,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const LinearProgressIndicator(
@@ -827,7 +864,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               child: Center(
                 child: Text(
                   'No classes scheduled today.',
-                  style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkMuted),
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: AppColors.inkMuted,
+                  ),
                 ),
               ),
             );
@@ -847,7 +887,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               itemBuilder: (context, index) {
                 final item = state.schedule[index];
                 return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   leading: Container(
                     width: 40,
                     height: 40,
@@ -912,7 +955,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               itemBuilder: (context, index) {
                 final record = recent[index];
                 return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   leading: _buildStatusIcon(record.status),
                   title: Text(
                     DateFormatter.formatDate(record.date),
@@ -957,9 +1003,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
   Widget _buildStatusIcon(AttendanceStatus status) {
     final (color, icon) = switch (status) {
-      AttendanceStatus.present => (AppColors.success, Icons.check_circle_outline_rounded),
+      AttendanceStatus.present => (
+        AppColors.success,
+        Icons.check_circle_outline_rounded,
+      ),
       AttendanceStatus.late => (AppColors.warning, Icons.access_time_rounded),
-      AttendanceStatus.absent => (AppColors.danger, Icons.highlight_off_rounded),
+      AttendanceStatus.absent => (
+        AppColors.danger,
+        Icons.highlight_off_rounded,
+      ),
     };
     return Container(
       width: 36,
@@ -987,42 +1039,46 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border, width: 1),
-          boxShadow: AppShadows.subtle,
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.accentTint,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                border: Border.all(color: AppColors.infoBorder, width: 1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border, width: 1),
+            boxShadow: AppShadows.subtle,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.accentTint,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(color: AppColors.infoBorder, width: 1),
+                ),
+                child: Icon(icon, color: AppColors.accent, size: 19),
               ),
-              child: Icon(icon, color: AppColors.accent, size: 18),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppColors.ink,
+              const SizedBox(height: 8),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.ink,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -178,8 +178,6 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildOutstandingSummary(state),
-                                const SizedBox(height: 16),
-                                _buildBankDetailsSection(state, child),
                                 const SizedBox(height: 20),
                                 Text(
                                   'Fee dues',
@@ -276,83 +274,6 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildBankDetailsSection(ParentFeesLoaded state, StudentModel child) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.border, width: 1),
-        boxShadow: AppShadows.subtle,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AppColors.accentTint,
-                      borderRadius: BorderRadius.circular(AppRadius.xs),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.account_balance_outlined, size: 18, color: AppColors.accent),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Official school bank details',
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                ],
-              ),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.upload_file_outlined, size: 14),
-                label: const Text('Submit proof', style: TextStyle(fontSize: 11)),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.accent,
-                  side: const BorderSide(color: AppColors.border),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  minimumSize: const Size(0, 32),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                ),
-                onPressed: () {
-                  final feeToPay = state.fees.firstWhere(
-                    (f) => !f.isFullyPaid,
-                    orElse: () => state.fees.isNotEmpty
-                        ? state.fees.first
-                        : FeeModel(
-                            id: '',
-                            studentId: child.id,
-                            title: 'Tuition Fee',
-                            description: 'Tuition & Academic Dues',
-                            amount: state.totalOutstanding > 0 ? state.totalOutstanding : 15000,
-                            paidAmount: 0,
-                            dueDate: DateTime.now().add(const Duration(days: 15)),
-                          ),
-                  );
-                  _openPaymentSheet(child, feeToPay, state.account);
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          _AccountDetailsCard(account: state.account),
-        ],
-      ),
     );
   }
 
@@ -588,17 +509,17 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
             const SnackBar(content: Text('Deposit slip image attached successfully.')),
           );
         }
-        return;
       }
-    } catch (_) {}
-
-    setState(() {
-      _screenshotName = 'deposit_slip_${DateTime.now().millisecondsSinceEpoch}.png';
-    });
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Deposit slip attached.')),
-      );
+      // If user cancelled / picked == null, do not attach any dummy image!
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
     }
   }
 

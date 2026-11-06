@@ -232,7 +232,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             onTap: () => context.pushNamed(RouteNames.parentLeave),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: _QuickAction(
             icon: Icons.payments_outlined,
@@ -240,20 +240,12 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             onTap: () => context.pushNamed(RouteNames.parentFees),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Expanded(
           child: _QuickAction(
             icon: Icons.calendar_month_outlined,
             label: 'Calendar',
             onTap: () => context.pushNamed(RouteNames.parentCalendar),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _QuickAction(
-            icon: Icons.campaign_outlined,
-            label: 'Notices',
-            onTap: () => context.pushNamed(RouteNames.parentAnnouncements),
           ),
         ),
       ],
@@ -598,10 +590,16 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
 
   Widget _buildCalendarPreview() {
     return BlocBuilder<ParentBloc, ParentState>(
-      buildWhen: (_, state) => state is ParentCalendarLoaded,
+      buildWhen: (_, state) =>
+          state is ParentCalendarLoaded ||
+          state is ParentCalendarLoading ||
+          state is ParentError,
       builder: (context, state) {
-        if (state is! ParentCalendarLoaded) {
+        if (state is ParentCalendarLoading) {
           return const ShimmerCard(height: 140);
+        }
+        if (state is! ParentCalendarLoaded) {
+          return const SizedBox.shrink();
         }
         if (state.events.isEmpty) return const SizedBox.shrink();
         final now = DateTime.now();
@@ -662,12 +660,16 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
           state is ParentFeesLoading ||
           state is ParentFeesError,
       builder: (context, state) {
-        if (state is! ParentFeesLoaded) {
+        if (state is! ParentFeesLoaded || state.feeData == null) {
           return const SizedBox.shrink();
         }
+        final feeData = state.feeData!;
+        final status = feeData.paymentStatus.toUpperCase();
+        final isPaid = status == 'PAID' || status == 'APPROVED' || status == 'VERIFIED';
         final outstanding = state.totalOutstanding;
-        // ONLY show when there is real fee due (> 0)
-        if (outstanding <= 0) {
+
+        // ONLY show when there is REAL live fee due (> 0) and not marked paid/approved
+        if (isPaid || outstanding <= 0) {
           return const SizedBox.shrink();
         }
         final pendingPayments =
@@ -815,42 +817,46 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.border, width: 1),
-          boxShadow: AppShadows.subtle,
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.accentTint,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                border: Border.all(color: AppColors.infoBorder, width: 1),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.border, width: 1),
+            boxShadow: AppShadows.subtle,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.accentTint,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(color: AppColors.infoBorder, width: 1),
+                ),
+                child: Icon(icon, color: AppColors.accent, size: 19),
               ),
-              child: Icon(icon, color: AppColors.accent, size: 18),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppColors.ink,
+              const SizedBox(height: 8),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.ink,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

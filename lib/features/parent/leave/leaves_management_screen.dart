@@ -385,45 +385,59 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                       color: AppColors.inkSecondary,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      _formatDateRange(item.startDate, item.endDate),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.inkSecondary,
+                    Expanded(
+                      child: Text(
+                        _formatDateRange(item.startDate, item.endDate),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.inkSecondary,
+                        ),
                       ),
                     ),
-                    if (item.studentId != null && item.studentId!.isNotEmpty) ...[
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceInset,
-                          borderRadius: BorderRadius.circular(AppRadius.xs),
-                          border: Border.all(color: AppColors.borderFaint),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.school_outlined,
-                              size: 13,
-                              color: AppColors.accent,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'ID: ${item.studentId}',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                  ],
+                ),
+                if (item.studentId != null && item.studentId!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceInset,
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
+                            border: Border.all(color: AppColors.borderFaint),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.school_outlined,
+                                size: 13,
                                 color: AppColors.accent,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  'Student ID: ${item.studentId}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.accent,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
-                  ],
-                ),
+                  ),
+                ],
                 if (item.description.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
