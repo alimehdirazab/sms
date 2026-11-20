@@ -8,6 +8,8 @@ import 'package:sms/features/parent/repositories/leave_repository.dart';
 import 'package:sms/features/parent/fees/models/parent_fee_api_model.dart';
 import 'package:sms/features/teacher/attendance/models/attendance_api_model.dart';
 import 'package:sms/features/announcements/models/announcement_model.dart';
+import 'package:sms/features/shared/models/timetable_item_model.dart';
+import 'package:sms/features/auth/models/marks_model.dart';
 
 void main() {
   group('ApiConstants Contract Validation', () {
@@ -34,6 +36,14 @@ void main() {
       expect(ApiConstants.notificationFcmToken, '/notifications/fcm-token');
       expect(ApiConstants.notificationBroadcast, '/notifications/broadcast');
       expect(ApiConstants.announcements, '/announcements');
+      expect(ApiConstants.timetable, '/timetable/');
+      expect(ApiConstants.timetableConfig, '/timetable-config');
+      expect(ApiConstants.timetableExportPdf, '/timetable/export/pdf');
+      expect(ApiConstants.parentExams, '/parent/exams');
+      expect(ApiConstants.teacherTests, '/teacher/tests');
+      expect(ApiConstants.teacherTestMarksDraft('test_1'), '/teacher/marks/tests/test_1');
+      expect(ApiConstants.teacherTestMarksSubmit('test_1'), '/teacher/marks/tests/test_1/submit');
+      expect(ApiConstants.user('3'), '/users/3');
     });
   });
 
@@ -380,6 +390,62 @@ void main() {
       expect(item.recipient, ['parents']);
       expect(item.senderName, 'Sir Ahmed');
       expect(item.senderRole, 'TEACHER');
+    });
+
+    test('TimetableItemModel safely parses live timetable slot JSON and nulls', () {
+      final empty = TimetableItemModel.fromJson(null);
+      expect(empty.id, '');
+      expect(empty.subjectName, '');
+      expect(empty.timeRange, ' - ');
+
+      final liveSlot = TimetableItemModel.fromJson(const {
+        'id': 'tt_slot_101',
+        'academicYear': '2026-2027',
+        'classId': 'cls_9',
+        'className': 'Grade 9',
+        'sectionName': 'Section A',
+        'subjectName': 'Physics',
+        'teacherName': 'Annemarie Mertens',
+        'day': 'Monday',
+        'startTime': '08:30 AM',
+        'endTime': '09:15 AM',
+        'roomName': 'Lab 2',
+      });
+
+      expect(liveSlot.id, 'tt_slot_101');
+      expect(liveSlot.subjectName, 'Physics');
+      expect(liveSlot.teacherName, 'Annemarie Mertens');
+      expect(liveSlot.day, 'Monday');
+      expect(liveSlot.timeRange, '08:30 AM - 09:15 AM');
+      expect(liveSlot.roomName, 'Lab 2');
+    });
+
+    test('ExamModel & StudentMarkModel safely calculate grades and percentage', () {
+      final exam = ExamModel(
+        id: 'ex_1',
+        name: 'Final Term Exams',
+        className: 'Class 9',
+        subjectId: 'sub_1',
+        subjectName: 'Mathematics',
+        date: DateTime(2026, 12, 1),
+      );
+
+      expect(exam.id, 'ex_1');
+      expect(exam.name, 'Final Term Exams');
+      expect(exam.subjectName, 'Mathematics');
+
+      const mark = StudentMarkModel(
+        id: 'sm_1',
+        examId: 'ex_1',
+        studentId: 'st_1',
+        studentName: 'Ali Raza',
+        rollNumber: '24',
+        obtainedMarks: 92,
+        totalMarks: 100,
+      );
+
+      expect(mark.percentage, 92.0);
+      expect(mark.grade, 'A+');
     });
   });
 }

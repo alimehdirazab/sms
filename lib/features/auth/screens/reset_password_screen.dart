@@ -75,10 +75,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         appBar: AppBar(
           title: Text(
             'Reset password',
-            style: GoogleFonts.instrumentSerif(
+            style: GoogleFonts.poppins(
               fontSize: 24,
               color: AppColors.ink,
-              letterSpacing: -0.02 * 24,
+              letterSpacing: 0.15,
             ),
           ),
           leading: IconButton(
@@ -125,11 +125,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         const SizedBox(height: 20),
                         Text(
                           'Create new password',
-                          style: GoogleFonts.instrumentSerif(
+                          style: GoogleFonts.poppins(
                             fontSize: 26,
                             fontWeight: FontWeight.normal,
                             color: AppColors.ink,
-                            letterSpacing: -0.02 * 26,
+                            letterSpacing: 0.15,
                           ),
                           textAlign: TextAlign.center,
                         ),

@@ -49,11 +49,11 @@ class _ParentAnnouncementsScreenState extends State<ParentAnnouncementsScreen> {
       appBar: AppBar(
         title: Text(
           'Campus announcements',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
       ),
@@ -100,7 +100,7 @@ class _ParentAnnouncementsScreenState extends State<ParentAnnouncementsScreen> {
                       const SizedBox(height: 14),
                       Text(
                         'No announcements yet',
-                        style: GoogleFonts.instrumentSerif(
+                        style: GoogleFonts.poppins(
                           fontSize: 22,
                           color: AppColors.ink,
                         ),
@@ -208,11 +208,11 @@ class _AnnouncementCard extends StatelessWidget {
                   children: [
                     Text(
                       announcement.title,
-                      style: GoogleFonts.instrumentSerif(
+                      style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.normal,
                         color: AppColors.ink,
-                        letterSpacing: -0.01 * 20,
+                        letterSpacing: 0.15,
                       ),
                     ),
                     const SizedBox(height: 3),

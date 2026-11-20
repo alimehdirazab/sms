@@ -121,13 +121,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 18),
 
                         Text(
-                          'Sign in to EduCore',
+                          'Sign in to Nexira',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.instrumentSerif(
-                            fontSize: 28,
-                            fontWeight: FontWeight.normal,
+                          style: GoogleFonts.poppins(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.ink,
-                            letterSpacing: -0.02 * 28,
+                            letterSpacing: 0.2,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -212,8 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   InkWell(
                                     onTap: () {
-                                      _emailController.text = 'teacher@gmail.com';
-                                      _passwordController.text = 'password123';
+                                      _emailController.text = 'annemarie.mertens.kgs@school.com';
+                                      _passwordController.text = 'password123**';
                                     },
                                     borderRadius: BorderRadius.circular(AppRadius.full),
                                     child: Container(
@@ -235,8 +235,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   InkWell(
                                     onTap: () {
-                                      _emailController.text = 'parent@gmail.com';
-                                      _passwordController.text = 'password123';
+                                      _emailController.text = 'parent.torres.1@gmail.com';
+                                      _passwordController.text = 'password123**';
                                     },
                                     borderRadius: BorderRadius.circular(AppRadius.full),
                                     child: Container(

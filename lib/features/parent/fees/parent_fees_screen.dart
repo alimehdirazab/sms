@@ -43,11 +43,11 @@ class _ParentFeesScreenState extends State<ParentFeesScreen> {
       appBar: AppBar(
         title: Text(
           'Fees & payments',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
       ),
@@ -584,7 +584,7 @@ class _FeePaymentSheetState extends State<_FeePaymentSheet> {
             const SizedBox(height: 16),
             Text(
               'Pay ${widget.fee.title}',
-              style: GoogleFonts.instrumentSerif(
+              style: GoogleFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.normal,
                 color: AppColors.ink,

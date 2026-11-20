@@ -166,12 +166,12 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'EduCore',
-                    style: GoogleFonts.instrumentSerif(
-                      fontSize: 36,
-                      fontWeight: FontWeight.normal,
+                    'Nexira',
+                    style: GoogleFonts.poppins(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
                       color: Colors.white,
-                      letterSpacing: -0.02 * 36,
+                      letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 6),

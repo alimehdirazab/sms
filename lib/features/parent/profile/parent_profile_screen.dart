@@ -11,6 +11,7 @@ import '../../../core/widgets/shimmer_loading.dart';
 import '../../auth/bloc/auth_bloc.dart';
 import '../../auth/models/attendance_model.dart';
 import '../../auth/models/user_model.dart';
+import '../../shared/widgets/edit_profile_dialog.dart';
 import '../bloc/parent_bloc.dart';
 
 class ParentProfileScreen extends StatefulWidget {
@@ -46,13 +47,38 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
       appBar: AppBar(
         title: Text(
           'Profile',
-          style: GoogleFonts.instrumentSerif(
-            fontSize: 24,
-            fontWeight: FontWeight.normal,
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Edit profile',
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            onPressed: () {
+              final authState = context.read<AuthBloc>().state;
+              final user = authState is AuthSuccess ? authState.user : null;
+              final names = (user?.name ?? 'Mr. Torres Guardian').split(' ');
+              final firstName = names.isNotEmpty ? names.first : 'Mr. Torres';
+              final lastName = names.length > 1 ? names.sublist(1).join(' ') : 'Guardian';
+
+              EditProfileDialog.show(
+                context,
+                userId: user?.id ?? 11,
+                initialFirstName: firstName,
+                initialLastName: lastName,
+                initialEmail: user?.email ?? 'parent.torres.1@gmail.com',
+                initialPhone: user?.phone ?? '+92 333 1122821',
+                onSuccess: () {
+                  context.read<ParentBloc>().add(LoadParentProfile());
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: BlocBuilder<ParentBloc, ParentState>(
         buildWhen: (_, state) =>
@@ -337,6 +363,13 @@ class _ParentProfileScreenState extends State<ParentProfileScreen> {
             title: 'Academic calendar',
             subtitle: 'Holidays, exams and school events',
             onTap: () => context.pushNamed(RouteNames.parentCalendar),
+          ),
+          const Divider(height: 1, thickness: 1, color: AppColors.borderFaint, indent: 56),
+          _buildLinkTile(
+            icon: Icons.calendar_view_week_rounded,
+            title: 'Class timetable',
+            subtitle: 'Weekly periods, subjects and room allocations',
+            onTap: () => context.pushNamed(RouteNames.parentTimetable),
           ),
         ],
       ),

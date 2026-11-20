@@ -31,11 +31,11 @@ class _ParentNotificationsScreenState
       appBar: AppBar(
         title: Text(
           'Alerts & updates',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
         actions: [

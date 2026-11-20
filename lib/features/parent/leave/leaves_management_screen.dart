@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -86,11 +88,11 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
         scrolledUnderElevation: 0,
         title: Text(
           widget.isTeacher ? 'Teacher leaves' : 'Student leaves',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
         bottom: TabBar(
@@ -541,11 +543,11 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                 children: [
                   Text(
                     'Leave request details',
-                    style: GoogleFonts.instrumentSerif(
+                    style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.normal,
                       color: AppColors.ink,
-                      letterSpacing: -0.02 * 22,
+                      letterSpacing: 0.15,
                     ),
                   ),
                   IconButton(
@@ -743,6 +745,8 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
   void _openApplyLeaveModal() {
     final leaveTypeController = TextEditingController(text: 'Casual Leave');
     final descController = TextEditingController();
+    String? attachmentBase64;
+    String? attachmentFileName;
 
     // Resolve children and active child ID for parent flow
     final parentBlocState = context.read<ParentBloc>().state;
@@ -801,11 +805,11 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                     const SizedBox(height: 16),
                     Text(
                       widget.isTeacher ? 'Apply teacher leave' : 'Apply student leave',
-                      style: GoogleFonts.instrumentSerif(
+                      style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.normal,
                         color: AppColors.ink,
-                        letterSpacing: -0.02 * 22,
+                        letterSpacing: 0.15,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -937,6 +941,67 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                         hintText: 'Explain the reason for requesting leave...',
                       ),
                     ),
+                    const SizedBox(height: 14),
+                    if (attachmentFileName != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceInset,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.attach_file_rounded, size: 18, color: AppColors.accent),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                attachmentFileName!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(fontSize: 12, color: AppColors.ink),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.danger),
+                              onPressed: () {
+                                setModalState(() {
+                                  attachmentBase64 = null;
+                                  attachmentFileName = null;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.add_photo_alternate_outlined, size: 18),
+                        label: const Text('Attach document / photo (Optional)'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.accent,
+                          side: const BorderSide(color: AppColors.border),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        onPressed: () async {
+                          final picker = ImagePicker();
+                          final picked = await picker.pickImage(
+                            source: ImageSource.gallery,
+                            imageQuality: 70,
+                          );
+                          if (picked != null) {
+                            final bytes = await picked.readAsBytes();
+                            final base64Str = base64Encode(bytes);
+                            setModalState(() {
+                              attachmentBase64 = 'data:image/jpeg;base64,$base64Str';
+                              attachmentFileName = picked.name;
+                            });
+                          }
+                        },
+                      ),
                     const SizedBox(height: 20),
                     FilledButton(
                       style: FilledButton.styleFrom(
@@ -962,6 +1027,7 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                                   startDate: dateFormat.format(startDate),
                                   endDate: dateFormat.format(endDate),
                                   description: descController.text.trim(),
+                                  attachment: attachmentBase64,
                                 ),
                               );
                         } else {
@@ -972,6 +1038,7 @@ class _LeavesManagementScreenState extends State<LeavesManagementScreen>
                                   endDate: dateFormat.format(endDate),
                                   description: descController.text.trim(),
                                   studentId: selectedStudentId,
+                                  attachment: attachmentBase64,
                                 ),
                               );
                         }

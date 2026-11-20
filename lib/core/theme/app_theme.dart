@@ -3,40 +3,37 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_status_colors.dart';
 
-/// Primary theme definition for EduCore UI Design System: Quiet Editorial Luxury.
-/// Source of truth: DESIGN.md
+/// Primary theme definition for Nexira UI Design System.
 class AppTheme {
   static const Color primaryColor = AppColors.accent;
   static const Color scaffoldBg = AppColors.bg;
 
   static final String? poppinsFamily = GoogleFonts.poppins().fontFamily;
-  static final String? instrumentSerifFamily = GoogleFonts.instrumentSerif().fontFamily;
 
-  /// Helper for Instrument Serif display titles (Page titles, hero banners)
+  /// Helper for Poppins display titles (Page titles, hero banners)
   static TextStyle displayTitle({
     double fontSize = 28,
     Color color = AppColors.ink,
-    FontWeight fontWeight = FontWeight.normal,
+    FontWeight fontWeight = FontWeight.w600,
   }) {
-    return GoogleFonts.instrumentSerif(
+    return GoogleFonts.poppins(
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
-      letterSpacing: -0.02 * fontSize,
+      letterSpacing: 0.15,
     );
   }
 
-  /// Helper for Instrument Serif KPI / Metric numerals (tabular, italic)
+  /// Helper for Poppins KPI / Metric numerals (tabular, clean)
   static TextStyle kpiNumeral({
     double fontSize = 36,
     Color color = AppColors.ink,
   }) {
-    return GoogleFonts.instrumentSerif(
+    return GoogleFonts.poppins(
       fontSize: fontSize,
-      fontStyle: FontStyle.italic,
-      fontWeight: FontWeight.normal,
+      fontWeight: FontWeight.w700,
       color: color,
-      letterSpacing: -0.02 * fontSize,
+      letterSpacing: 0.2,
     );
   }
 
@@ -52,6 +49,7 @@ class AppTheme {
       fontWeight: fontWeight,
       color: color,
       height: height,
+      letterSpacing: 0.1,
     );
   }
 
@@ -89,11 +87,11 @@ class AppTheme {
         backgroundColor: AppColors.bg,
         foregroundColor: AppColors.ink,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.instrumentSerif(
+        titleTextStyle: GoogleFonts.poppins(
           color: AppColors.ink,
-          fontSize: 24,
-          fontWeight: FontWeight.normal,
-          letterSpacing: -0.02 * 24,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.15,
         ),
         iconTheme: const IconThemeData(
           color: AppColors.inkSecondary,

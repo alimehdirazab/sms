@@ -20,8 +20,9 @@ import '../../features/teacher/schedule/teacher_weekly_schedule_screen.dart';
 import '../../features/teacher/leave/teacher_leave_screen.dart';
 import '../../features/teacher/notifications/teacher_notifications_screen.dart';
 import '../../features/parent/announcements/parent_announcements_screen.dart';
+import '../../features/parent/schedule/parent_timetable_screen.dart';
 import '../../features/teacher/announcements/teacher_announcements_screen.dart';
-import '../../core/theme/app_colors.dart';
+import '../widgets/floating_nav_bar.dart';
 
 class RouteNames {
   static const splash = 'splash';
@@ -52,6 +53,7 @@ class RouteNames {
   static const parentApiLeaves = 'parentApiLeaves';
   static const parentFees = 'parentFees';
   static const parentCalendar = 'parentCalendar';
+  static const parentTimetable = 'parentTimetable';
 }
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -277,6 +279,15 @@ final appRouter = GoRouter(
                     state: state,
                   ),
                 ),
+                GoRoute(
+                  path: 'timetable',
+                  name: RouteNames.parentTimetable,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const ParentTimetableScreen(),
+                    state: state,
+                  ),
+                ),
               ],
             ),
           ],
@@ -344,45 +355,36 @@ class TeacherShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: navigationShell,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      bottomNavigationBar: FloatingNavBar(
+        currentIndex: navigationShell.currentIndex,
+        onTap: (index) => navigationShell.goBranch(
+          index,
+          initialLocation: index == navigationShell.currentIndex,
         ),
-        child: BottomNavigationBar(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          selectedItemColor: AppColors.accent,
-          unselectedItemColor: AppColors.inkMuted,
-          currentIndex: navigationShell.currentIndex,
-          onTap: (index) => navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
+        items: const [
+          FloatingNavItem(
+            icon: Icons.home_outlined,
+            activeIcon: Icons.home_rounded,
+            label: 'Home',
           ),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.event_note_outlined),
-              activeIcon: Icon(Icons.event_note),
-              label: 'Attendance',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grade_outlined),
-              activeIcon: Icon(Icons.grade),
-              label: 'Marks',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
-        ),
+          FloatingNavItem(
+            icon: Icons.fact_check_outlined,
+            activeIcon: Icons.fact_check_rounded,
+            label: 'Attendance',
+          ),
+          FloatingNavItem(
+            icon: Icons.grade_outlined,
+            activeIcon: Icons.grade_rounded,
+            label: 'Marks',
+          ),
+          FloatingNavItem(
+            icon: Icons.person_outline_rounded,
+            activeIcon: Icons.person_rounded,
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
@@ -396,45 +398,36 @@ class ParentShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: navigationShell,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      bottomNavigationBar: FloatingNavBar(
+        currentIndex: navigationShell.currentIndex,
+        onTap: (index) => navigationShell.goBranch(
+          index,
+          initialLocation: index == navigationShell.currentIndex,
         ),
-        child: BottomNavigationBar(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          selectedItemColor: AppColors.accent,
-          unselectedItemColor: AppColors.inkMuted,
-          currentIndex: navigationShell.currentIndex,
-          onTap: (index) => navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
+        items: const [
+          FloatingNavItem(
+            icon: Icons.home_outlined,
+            activeIcon: Icons.home_rounded,
+            label: 'Home',
           ),
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.grade_outlined),
-              activeIcon: Icon(Icons.grade),
-              label: 'Marks',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_outlined),
-              activeIcon: Icon(Icons.notifications),
-              label: 'Alerts',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
-        ),
+          FloatingNavItem(
+            icon: Icons.grade_outlined,
+            activeIcon: Icons.grade_rounded,
+            label: 'Marks',
+          ),
+          FloatingNavItem(
+            icon: Icons.notifications_none_rounded,
+            activeIcon: Icons.notifications_rounded,
+            label: 'Alerts',
+          ),
+          FloatingNavItem(
+            icon: Icons.person_outline_rounded,
+            activeIcon: Icons.person_rounded,
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

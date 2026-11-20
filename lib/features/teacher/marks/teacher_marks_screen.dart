@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../bloc/teacher_bloc.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/animated_button.dart';
 import '../../auth/models/marks_model.dart';
 import '../../shared/widgets/stat_card.dart';
+import 'repositories/teacher_assessment_repository.dart';
 
 // --- Teacher Marks Home ---
 class TeacherMarksScreen extends StatelessWidget {
@@ -20,11 +22,11 @@ class TeacherMarksScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Marks management',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
         actions: [
@@ -154,11 +156,11 @@ class TeacherSubjectsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           className,
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
       ),
@@ -278,13 +280,20 @@ class TeacherExamsScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           '$subject exams',
-          style: GoogleFonts.instrumentSerif(
-            fontSize: 24,
-            fontWeight: FontWeight.normal,
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Create assessment',
+            icon: const Icon(Icons.add_task_rounded, size: 20),
+            onPressed: () => _showCreateTestDialog(context),
+          ),
+        ],
       ),
       body: BlocBuilder<TeacherBloc, TeacherState>(
         buildWhen: (_, state) =>
@@ -397,6 +406,158 @@ class TeacherExamsScreen extends StatelessWidget {
       ),
     );
   }
+
+  void _showCreateTestDialog(BuildContext context) {
+    final titleController = TextEditingController();
+    final totalMarksController = TextEditingController(text: '100');
+    final passMarksController = TextEditingController(text: '40');
+    String selectedType = 'Quiz';
+    DateTime examDate = DateTime.now().add(const Duration(days: 7));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 16,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: AppColors.border,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Create new assessment',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Assessment title',
+                        hintText: 'e.g. Algebra Quiz 1',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedType,
+                      decoration: const InputDecoration(labelText: 'Type'),
+                      items: const [
+                        DropdownMenuItem(value: 'Quiz', child: Text('Quiz')),
+                        DropdownMenuItem(value: 'Midterm', child: Text('Midterm')),
+                        DropdownMenuItem(value: 'Final', child: Text('Final')),
+                        DropdownMenuItem(value: 'Test', child: Text('Test')),
+                        DropdownMenuItem(value: 'Assignment', child: Text('Assignment')),
+                      ],
+                      onChanged: (val) {
+                        if (val != null) setModalState(() => selectedType = val);
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: totalMarksController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Total marks'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: passMarksController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Pass marks'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 46),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                      ),
+                      onPressed: () async {
+                        final title = titleController.text.trim();
+                        if (title.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter an assessment title')),
+                          );
+                          return;
+                        }
+                        Navigator.pop(ctx);
+                        try {
+                          final repo = TeacherAssessmentRepository(apiClient: ApiClient());
+                          await repo.createTest(
+                            courseId: 'bf60048a-3a72-476f-98b3-0d8a278cdb84',
+                            title: title,
+                            type: selectedType,
+                            examDate: examDate.toIso8601String().substring(0, 10),
+                            totalMarks: num.tryParse(totalMarksController.text) ?? 100,
+                            passMarks: num.tryParse(passMarksController.text) ?? 40,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Assessment created successfully'),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+                            context.read<TeacherBloc>().add(LoadTeacherExams(className, subject));
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(e.toString().replaceAll('Exception:', '').trim()),
+                                backgroundColor: AppColors.danger,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      child: const Text('Create assessment'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
 // --- Student Marks Entry Screen ---
@@ -457,11 +618,11 @@ class _StudentMarksEntryScreenState extends State<StudentMarksEntryScreen> {
       appBar: AppBar(
         title: Text(
           widget.exam.name,
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
       ),
@@ -736,7 +897,7 @@ class _StudentMarkCardState extends State<_StudentMarkCard> {
               children: [
                 Text(
                   '${_percentage.toStringAsFixed(1)}%',
-                  style: GoogleFonts.instrumentSerif(
+                  style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontStyle: FontStyle.italic,
                     fontWeight: FontWeight.normal,

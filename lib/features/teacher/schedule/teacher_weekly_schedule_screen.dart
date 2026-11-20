@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../bloc/teacher_bloc.dart';
+import '../../../core/network/api_client.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/error_widget.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../auth/models/notification_model.dart';
+import '../../shared/repositories/timetable_repository.dart';
 import '../../shared/widgets/stat_card.dart';
 
 /// Full-week timetable for the teacher, grouped by weekday with the current
 /// day highlighted and its periods marked as "Now" / "Next".
 class TeacherWeeklyScheduleScreen extends StatefulWidget {
-  const TeacherWeeklyScheduleScreen({super.key});
+  final ApiClient? apiClient;
+
+  const TeacherWeeklyScheduleScreen({super.key, this.apiClient});
 
   @override
   State<TeacherWeeklyScheduleScreen> createState() =>
@@ -32,6 +36,9 @@ class _TeacherWeeklyScheduleScreenState
   ];
 
   late final TabController _tabController;
+  late final TimetableRepository _timetableRepo;
+  Map<String, List<ScheduleModel>>? _apiWeeklySchedule;
+  bool _isLoadingApi = true;
   final _todayName = _weekdayName(DateTime.now().weekday);
 
   @override
@@ -43,7 +50,59 @@ class _TeacherWeeklyScheduleScreenState
       vsync: this,
       initialIndex: initialIndex < 0 ? 0 : initialIndex,
     );
+    _timetableRepo = TimetableRepository(apiClient: widget.apiClient ?? ApiClient());
+    _fetchLiveTimetable();
     context.read<TeacherBloc>().add(LoadTeacherWeeklySchedule());
+  }
+
+  Future<void> _fetchLiveTimetable() async {
+    try {
+      final grouped = await _timetableRepo.getWeeklyTimetableGrouped();
+      if (!mounted) return;
+
+      final now = DateTime.now();
+      DateTime parseTime(String timeStr) {
+        final parts = timeStr.split(':');
+        final hour = parts.isNotEmpty ? int.tryParse(parts[0]) ?? 8 : 8;
+        final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+        return DateTime(now.year, now.month, now.day, hour, minute);
+      }
+
+      final Map<String, List<ScheduleModel>> mapped = {};
+      var hasAnyEntries = false;
+
+      for (final day in _weekdays) {
+        final entries = grouped[day] ?? [];
+        if (entries.isNotEmpty) hasAnyEntries = true;
+        mapped[day] = entries.map((item) {
+          return ScheduleModel(
+            id: item.id,
+            subject: item.subjectName.isNotEmpty
+                ? item.subjectName
+                : (item.courseName.isNotEmpty ? item.courseName : 'Class'),
+            className: item.className,
+            section: item.sectionName,
+            startTime: parseTime(item.startTime),
+            endTime: parseTime(item.endTime),
+          );
+        }).toList();
+      }
+
+      if (mounted) {
+        setState(() {
+          if (hasAnyEntries) {
+            _apiWeeklySchedule = mapped;
+          }
+          _isLoadingApi = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingApi = false;
+        });
+      }
+    }
   }
 
   @override
@@ -72,11 +131,11 @@ class _TeacherWeeklyScheduleScreenState
       appBar: AppBar(
         title: Text(
           'Weekly timetable',
-          style: GoogleFonts.instrumentSerif(
-            fontSize: 24,
-            fontWeight: FontWeight.normal,
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
       ),
@@ -86,18 +145,21 @@ class _TeacherWeeklyScheduleScreenState
             state is TeacherWeeklyScheduleLoading ||
             state is TeacherError,
         builder: (context, state) {
-          if (state is TeacherError) {
-            return AppErrorWidget(
-              message: state.message,
-              onRetry: () => context
-                  .read<TeacherBloc>()
-                  .add(LoadTeacherWeeklySchedule()),
-            );
-          }
-          if (state is! TeacherWeeklyScheduleLoaded) {
+          if (_isLoadingApi && state is! TeacherWeeklyScheduleLoaded) {
             return const ShimmerLoading(itemCount: 6, itemHeight: 90);
           }
-          final week = state.week;
+          if (state is TeacherError && _apiWeeklySchedule == null) {
+            return AppErrorWidget(
+              message: state.message,
+              onRetry: () {
+                _fetchLiveTimetable();
+                context.read<TeacherBloc>().add(LoadTeacherWeeklySchedule());
+              },
+            );
+          }
+
+          final week = _apiWeeklySchedule ??
+              (state is TeacherWeeklyScheduleLoaded ? state.week : <String, List<ScheduleModel>>{});
 
           return Column(
             children: [

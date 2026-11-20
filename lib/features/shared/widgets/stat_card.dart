@@ -79,12 +79,12 @@ class StatCard extends StatelessWidget {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.instrumentSerif(
+            style: GoogleFonts.poppins(
               fontSize: 32,
               fontStyle: FontStyle.italic,
               fontWeight: FontWeight.normal,
               color: AppColors.ink,
-              letterSpacing: -0.02 * 32,
+              letterSpacing: 0.15,
             ),
           ),
           if (caption != null) ...[

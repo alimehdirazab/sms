@@ -1,10 +1,8 @@
 class ApiConstants {
   ApiConstants._();
 
-  /// Default local development base URL from Postman collection
-  /// For Android emulator, developers can use 'http://10.0.2.2:4000/api'
-  static const String defaultBaseUrl =
-      'https://school-erp-backend-production-7992.up.railway.app/api';
+  /// Nexira Production Base URL
+  static const String defaultBaseUrl = 'https://api.nexira.pk/api';
 
   // Auth endpoints
   static const String login = '/auth/login';
@@ -27,11 +25,30 @@ class ApiConstants {
   static const String parentFees = '/parent/fees';
   static const String submitFeePayment = '/parent/fees/submit-payment';
 
-  // Academic calendar
+  // Parent exams
+  static const String parentExams = '/parent/exams';
+
+  // Academic calendar & sessions
   static const String academicCalendarEvents = '/academic-calendar/events';
   static String academicCalendarEventDetails(String eventId) =>
       '/academic-calendar/events/$eventId';
   static const String academicCalendarSessions = '/academic-calendar/sessions';
+
+  // Timetable
+  static const String timetable = '/timetable/';
+  static const String timetableConfig = '/timetable-config';
+  static const String timetableExportPdf = '/timetable/export/pdf';
+  static const String timetableToday = '/teacher/timetable/today';
+
+  // Teacher Tests & Marks
+  static const String teacherTests = '/teacher/tests';
+  static String teacherTestMarksDraft(String testId) =>
+      '/teacher/marks/tests/$testId';
+  static String teacherTestMarksSubmit(String testId) =>
+      '/teacher/marks/tests/$testId/submit';
+
+  // User Profile
+  static String user(dynamic id) => '/users/$id';
 
   // Notifications & FCM
   static const String notifications = '/notifications';
@@ -48,7 +65,4 @@ class ApiConstants {
   static const String attendanceCheckOut = '/attendance/check-out';
   static const String attendanceRecent = '/attendance/recent';
   static const String attendanceMyHistory = '/attendance/my-attendance';
-
-  // Timetable endpoints (Teacher)
-  static const String timetableToday = '/teacher/timetable/today';
 }

@@ -55,11 +55,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       appBar: AppBar(
         title: Text(
           'Teacher dashboard',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
         actions: [
@@ -141,11 +141,11 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       const SizedBox(height: 2),
                       Text(
                         name,
-                        style: GoogleFonts.instrumentSerif(
+                        style: GoogleFonts.poppins(
                           fontSize: 26,
                           fontWeight: FontWeight.normal,
                           color: AppColors.ink,
-                          letterSpacing: -0.02 * 26,
+                          letterSpacing: 0.15,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -440,7 +440,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(
           'Running late?',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 22,
             color: AppColors.ink,
           ),
@@ -505,7 +505,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             const SizedBox(width: 8),
             Text(
               'Check-in verification',
-              style: GoogleFonts.instrumentSerif(
+              style: GoogleFonts.poppins(
                 fontSize: 22,
                 color: AppColors.ink,
               ),

@@ -9,10 +9,11 @@ class ApiClient {
   final SessionStorageService storageService;
 
   ApiClient({
-    required this.storageService,
+    SessionStorageService? storageService,
     Dio? customDio,
     void Function()? onSessionExpired,
-  }) : dio = customDio ??
+  })  : storageService = storageService ?? SessionStorageService(),
+        dio = customDio ??
             Dio(
               BaseOptions(
                 baseUrl: ApiConstants.defaultBaseUrl,

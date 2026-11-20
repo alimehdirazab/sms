@@ -33,11 +33,11 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
       appBar: AppBar(
         title: Text(
           'My attendance',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
         actions: [
@@ -171,7 +171,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
       builder: (ctx) => AlertDialog(
         title: Text(
           'Attendance correction',
-          style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.ink),
+          style: GoogleFonts.poppins(fontSize: 22, color: AppColors.ink),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,

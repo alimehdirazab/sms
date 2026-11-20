@@ -13,6 +13,7 @@ import '../fees/models/parent_fee_api_model.dart';
 import '../fees/repositories/parent_fee_repository.dart';
 import '../calendar/repositories/academic_calendar_repository.dart';
 import '../notifications/repositories/notification_repository.dart';
+import '../repositories/parent_exam_repository.dart';
 
 // --- States ---
 abstract class ParentState extends Equatable {
@@ -283,6 +284,7 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
   final ParentFeeRepository? feeRepository;
   final AcademicCalendarRepository? calendarRepository;
   final NotificationRepository? notificationRepository;
+  final ParentExamRepository? examRepository;
 
   ParentBloc({
     MockParentRepository? repository,
@@ -290,6 +292,7 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
     this.feeRepository,
     this.calendarRepository,
     this.notificationRepository,
+    this.examRepository,
   })  : _repository = repository ?? MockParentRepository(),
         super(ParentInitial()) {
     on<LoadParentProfile>(_onLoadProfile);
@@ -420,6 +423,13 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
   ) async {
     emit(ParentMarksLoading());
     try {
+      if (examRepository != null) {
+        final apiMarks = await examRepository!.getStudentMarks(event.studentId);
+        if (apiMarks.isNotEmpty) {
+          emit(ParentMarksLoaded(apiMarks));
+          return;
+        }
+      }
       final marks = await _repository.getStudentMarks(event.studentId);
       emit(ParentMarksLoaded(marks));
     } catch (e) {
@@ -433,6 +443,13 @@ class ParentBloc extends Bloc<ParentEvent, ParentState> {
   ) async {
     emit(ParentUpcomingExamsLoading());
     try {
+      if (examRepository != null) {
+        final apiExams = await examRepository!.getUpcomingExams(event.studentId);
+        if (apiExams.isNotEmpty) {
+          emit(ParentUpcomingExamsLoaded(apiExams));
+          return;
+        }
+      }
       final exams = await _repository.getUpcomingExams(event.studentId);
       emit(ParentUpcomingExamsLoaded(exams));
     } catch (e) {

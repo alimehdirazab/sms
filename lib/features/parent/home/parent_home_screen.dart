@@ -47,14 +47,19 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
       appBar: AppBar(
         title: Text(
           'Parent dashboard',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: 'Class timetable',
+            icon: const Icon(Icons.calendar_view_week_rounded, size: 22),
+            onPressed: () => context.pushNamed(RouteNames.parentTimetable),
+          ),
           IconButton(
             tooltip: 'Announcements',
             icon: const Icon(Icons.campaign_outlined, size: 22),
@@ -114,11 +119,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
                     const SizedBox(height: 2),
                     Text(
                       profile.name.split(' ').first,
-                      style: GoogleFonts.instrumentSerif(
+                      style: GoogleFonts.poppins(
                         fontSize: 26,
                         fontWeight: FontWeight.normal,
                         color: AppColors.ink,
-                        letterSpacing: -0.02 * 26,
+                        letterSpacing: 0.15,
                       ),
                     ),
                     const SizedBox(height: 16),

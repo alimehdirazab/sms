@@ -36,11 +36,11 @@ class RoleSelectionScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 'School Management System',
-                style: GoogleFonts.instrumentSerif(
+                style: GoogleFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.normal,
                   color: AppColors.ink,
-                  letterSpacing: -0.02 * 28,
+                  letterSpacing: 0.15,
                 ),
                 textAlign: TextAlign.center,
               ),

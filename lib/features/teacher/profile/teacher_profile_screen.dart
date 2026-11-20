@@ -8,6 +8,7 @@ import '../../../core/routes/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../core/widgets/error_widget.dart';
+import '../../shared/widgets/edit_profile_dialog.dart';
 
 class TeacherProfileScreen extends StatelessWidget {
   const TeacherProfileScreen({super.key});
@@ -19,13 +20,44 @@ class TeacherProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'My profile',
-          style: GoogleFonts.instrumentSerif(
-            fontSize: 24,
-            fontWeight: FontWeight.normal,
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Edit profile',
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            onPressed: () {
+              final authState = context.read<AuthBloc>().state;
+              final user = authState is AuthSuccess ? authState.user : null;
+              final names = (user?.name ?? 'Annemarie Mertens').split(' ');
+              final firstName = names.isNotEmpty ? names.first : 'Annemarie';
+              final lastName = names.length > 1 ? names.sublist(1).join(' ') : 'Mertens';
+
+              EditProfileDialog.show(
+                context,
+                userId: user?.id ?? 3,
+                initialFirstName: firstName,
+                initialLastName: lastName,
+                initialEmail: user?.email ?? 'annemarie.mertens.kgs@school.com',
+                initialPhone: user?.phone ?? '+92 333 1068021',
+                initialCnic: '42301-1039445-2',
+                initialBloodGroup: 'A+',
+                initialFatherName: 'Mertens Senior',
+                initialContactNo1: '+92 333 1068021',
+                initialEmergencyContact: '+92 333 1095422',
+                initialAddress: '6816 De Vlakte, Block 5, Clifton, Karachi',
+                onSuccess: () {
+                  context.read<TeacherBloc>().add(LoadTeacherProfile());
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: BlocBuilder<TeacherBloc, TeacherState>(
         buildWhen: (_, state) =>
@@ -82,11 +114,11 @@ class TeacherProfileScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   Text(
                     profile.name,
-                    style: GoogleFonts.instrumentSerif(
+                    style: GoogleFonts.poppins(
                       fontSize: 26,
                       fontWeight: FontWeight.normal,
                       color: AppColors.ink,
-                      letterSpacing: -0.02 * 26,
+                      letterSpacing: 0.15,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -286,7 +318,7 @@ class TeacherProfileScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: Text(
           'Sign out',
-          style: GoogleFonts.instrumentSerif(fontSize: 22, color: AppColors.ink),
+          style: GoogleFonts.poppins(fontSize: 22, color: AppColors.ink),
         ),
         content: Text(
           'Are you sure you want to sign out of your account?',

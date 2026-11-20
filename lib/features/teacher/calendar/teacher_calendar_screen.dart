@@ -32,11 +32,11 @@ class _TeacherCalendarScreenState extends State<TeacherCalendarScreen> {
       appBar: AppBar(
         title: Text(
           'Academic calendar',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
       ),

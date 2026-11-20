@@ -40,11 +40,11 @@ class _TeacherNotificationsScreenState
       appBar: AppBar(
         title: Text(
           'Campus notices',
-          style: GoogleFonts.instrumentSerif(
+          style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.normal,
             color: AppColors.ink,
-            letterSpacing: -0.02 * 24,
+            letterSpacing: 0.15,
           ),
         ),
         actions: [
@@ -250,7 +250,7 @@ class _TeacherNotificationsScreenState
                     const SizedBox(height: 16),
                     Text(
                       'Broadcast announcement',
-                      style: GoogleFonts.instrumentSerif(
+                      style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.normal,
                         color: AppColors.ink,

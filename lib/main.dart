@@ -22,6 +22,8 @@ import 'features/teacher/attendance/repositories/teacher_attendance_repository.d
 import 'features/teacher/schedule/repositories/teacher_timetable_repository.dart';
 import 'features/announcements/bloc/announcement_bloc.dart';
 import 'features/announcements/repositories/announcement_repository.dart';
+import 'features/parent/repositories/parent_exam_repository.dart';
+import 'features/shared/repositories/timetable_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +74,8 @@ void main() async {
 
   final notificationRepository = NotificationRepository(apiClient: apiClient);
   final announcementRepository = AnnouncementRepository(apiClient: apiClient);
+  final parentExamRepository = ParentExamRepository(apiClient: apiClient);
+  final timetableRepository = TimetableRepository(apiClient: apiClient);
 
   // Register FCM token only when user is authenticated with an active session
   FcmService.addTokenListener((token) async {
@@ -92,6 +96,8 @@ void main() async {
       academicCalendarRepository: academicCalendarRepository,
       notificationRepository: notificationRepository,
       announcementRepository: announcementRepository,
+      parentExamRepository: parentExamRepository,
+      timetableRepository: timetableRepository,
     ),
   );
 }
@@ -106,6 +112,8 @@ class SchoolManagementApp extends StatelessWidget {
   final AcademicCalendarRepository academicCalendarRepository;
   final NotificationRepository notificationRepository;
   final AnnouncementRepository announcementRepository;
+  final ParentExamRepository parentExamRepository;
+  final TimetableRepository timetableRepository;
 
   const SchoolManagementApp({
     super.key,
@@ -118,6 +126,8 @@ class SchoolManagementApp extends StatelessWidget {
     required this.academicCalendarRepository,
     required this.notificationRepository,
     required this.announcementRepository,
+    required this.parentExamRepository,
+    required this.timetableRepository,
   });
 
   @override
@@ -147,6 +157,12 @@ class SchoolManagementApp extends StatelessWidget {
         RepositoryProvider<AnnouncementRepository>.value(
           value: announcementRepository,
         ),
+        RepositoryProvider<ParentExamRepository>.value(
+          value: parentExamRepository,
+        ),
+        RepositoryProvider<TimetableRepository>.value(
+          value: timetableRepository,
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -172,6 +188,7 @@ class SchoolManagementApp extends StatelessWidget {
               feeRepository: parentFeeRepository,
               calendarRepository: academicCalendarRepository,
               notificationRepository: notificationRepository,
+              examRepository: parentExamRepository,
             ),
           ),
           BlocProvider<AnnouncementBloc>(
@@ -180,7 +197,7 @@ class SchoolManagementApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp.router(
-          title: 'School Management System',
+          title: 'Nexira',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

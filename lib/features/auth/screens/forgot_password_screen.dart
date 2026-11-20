@@ -58,10 +58,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         appBar: AppBar(
           title: Text(
             'Forgot password',
-            style: GoogleFonts.instrumentSerif(
+            style: GoogleFonts.poppins(
               fontSize: 24,
               color: AppColors.ink,
-              letterSpacing: -0.02 * 24,
+              letterSpacing: 0.15,
             ),
           ),
           leading: IconButton(
@@ -108,11 +108,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         const SizedBox(height: 20),
                         Text(
                           'Reset your password',
-                          style: GoogleFonts.instrumentSerif(
+                          style: GoogleFonts.poppins(
                             fontSize: 26,
                             fontWeight: FontWeight.normal,
                             color: AppColors.ink,
-                            letterSpacing: -0.02 * 26,
+                            letterSpacing: 0.15,
                           ),
                           textAlign: TextAlign.center,
                         ),
