@@ -61,11 +61,6 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             onPressed: () => context.pushNamed(RouteNames.parentTimetable),
           ),
           IconButton(
-            tooltip: 'Announcements',
-            icon: const Icon(Icons.campaign_outlined, size: 22),
-            onPressed: () => context.pushNamed(RouteNames.parentAnnouncements),
-          ),
-          IconButton(
             tooltip: 'Notifications',
             icon: const Icon(Icons.notifications_outlined, size: 22),
             onPressed: () => context.pushNamed(RouteNames.parentNotifications),
@@ -447,8 +442,14 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
 
   Widget _buildRecentMarks() {
     return BlocBuilder<ParentBloc, ParentState>(
-      buildWhen: (_, state) => state is ParentMarksLoaded,
+      buildWhen: (_, state) =>
+          state is ParentMarksLoaded ||
+          state is ParentMarksLoading ||
+          state is ParentError,
       builder: (context, state) {
+        if (state is ParentMarksLoading) {
+          return const ShimmerCard(height: 90);
+        }
         if (state is ParentMarksLoaded) {
           if (state.marks.isEmpty) return const SizedBox.shrink();
           final latestMarks = state.marks.take(3).toList();
@@ -527,15 +528,21 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             ),
           );
         }
-        return const ShimmerCard(height: 100);
+        return const SizedBox.shrink();
       },
     );
   }
 
   Widget _buildUpcomingExams() {
     return BlocBuilder<ParentBloc, ParentState>(
-      buildWhen: (_, state) => state is ParentUpcomingExamsLoaded,
+      buildWhen: (_, state) =>
+          state is ParentUpcomingExamsLoaded ||
+          state is ParentUpcomingExamsLoading ||
+          state is ParentError,
       builder: (context, state) {
+        if (state is ParentUpcomingExamsLoading) {
+          return const ShimmerCard(height: 100);
+        }
         if (state is ParentUpcomingExamsLoaded) {
           if (state.exams.isEmpty) return const SizedBox.shrink();
           return Container(
@@ -588,7 +595,7 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
             ),
           );
         }
-        return const ShimmerCard(height: 100);
+        return const SizedBox.shrink();
       },
     );
   }
@@ -601,12 +608,11 @@ class _ParentHomeScreenState extends State<ParentHomeScreen> {
           state is ParentError,
       builder: (context, state) {
         if (state is ParentCalendarLoading) {
-          return const ShimmerCard(height: 140);
+          return const ShimmerCard(height: 120);
         }
-        if (state is! ParentCalendarLoaded) {
+        if (state is! ParentCalendarLoaded || state.events.isEmpty) {
           return const SizedBox.shrink();
         }
-        if (state.events.isEmpty) return const SizedBox.shrink();
         final now = DateTime.now();
         final upcoming =
             state.events.where((e) => e.startsOnOrAfter(now)).take(3).toList();

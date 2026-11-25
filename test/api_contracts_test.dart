@@ -7,7 +7,6 @@ import 'package:sms/features/parent/models/leave_api_model.dart';
 import 'package:sms/features/parent/repositories/leave_repository.dart';
 import 'package:sms/features/parent/fees/models/parent_fee_api_model.dart';
 import 'package:sms/features/teacher/attendance/models/attendance_api_model.dart';
-import 'package:sms/features/announcements/models/announcement_model.dart';
 import 'package:sms/features/shared/models/timetable_item_model.dart';
 import 'package:sms/features/auth/models/marks_model.dart';
 
@@ -35,7 +34,9 @@ void main() {
       expect(ApiConstants.markAllNotificationsRead, '/notifications/mark-all-read');
       expect(ApiConstants.notificationFcmToken, '/notifications/fcm-token');
       expect(ApiConstants.notificationBroadcast, '/notifications/broadcast');
-      expect(ApiConstants.announcements, '/announcements');
+      expect(ApiConstants.changePassword, '/auth/change-password');
+      expect(ApiConstants.parentDashboardAttendance, '/parent/dashboard/student-attendance');
+      expect(ApiConstants.parentDashboardUpcomingExams, '/parent/dashboard/upcoming-exams');
       expect(ApiConstants.timetable, '/timetable/');
       expect(ApiConstants.timetableConfig, '/timetable-config');
       expect(ApiConstants.timetableExportPdf, '/timetable/export/pdf');
@@ -347,49 +348,6 @@ void main() {
       expect(notif.type, NotificationType.feeDue);
       expect(notif.isRead, isFalse);
       expect(notif.createdByName, 'Bilal Ahmed Ali');
-    });
-
-    test('AnnouncementModel & AnnouncementListResponseModel handle live schemas and nulls', () {
-      final empty = AnnouncementListResponseModel.fromJson(null);
-      expect(empty.announcements, isEmpty);
-      expect(empty.page, 1);
-      expect(empty.hasNextPage, isFalse);
-
-      final liveResponse = AnnouncementListResponseModel.fromJson(const {
-        'success': true,
-        'data': [
-          {
-            'id': 'ann_101',
-            'title': 'Upcoming Parent-Teacher Conference',
-            'message': 'Dear parents, please note that...',
-            'recipient': ['parents'],
-            'senderName': 'Sir Ahmed',
-            'senderRole': 'TEACHER',
-            'createdAt': '2026-11-06T18:00:00.000Z',
-          }
-        ],
-        'meta': {
-          'page': 1,
-          'limit': 10,
-          'total': 25,
-          'totalPages': 3,
-          'hasNextPage': true,
-        }
-      });
-
-      expect(liveResponse.announcements.length, 1);
-      expect(liveResponse.page, 1);
-      expect(liveResponse.limit, 10);
-      expect(liveResponse.total, 25);
-      expect(liveResponse.totalPages, 3);
-      expect(liveResponse.hasNextPage, isTrue);
-
-      final item = liveResponse.announcements.first;
-      expect(item.id, 'ann_101');
-      expect(item.title, 'Upcoming Parent-Teacher Conference');
-      expect(item.recipient, ['parents']);
-      expect(item.senderName, 'Sir Ahmed');
-      expect(item.senderRole, 'TEACHER');
     });
 
     test('TimetableItemModel safely parses live timetable slot JSON and nulls', () {

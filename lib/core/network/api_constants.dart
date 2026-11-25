@@ -9,6 +9,7 @@ class ApiConstants {
   static const String refresh = '/auth/refresh';
   static const String forgotPassword = '/auth/forgot-password';
   static const String resetPassword = '/auth/reset-password';
+  static const String changePassword = '/auth/change-password';
   static const String logout = '/auth/logout';
 
   // Leaves endpoints
@@ -57,8 +58,9 @@ class ApiConstants {
   static const String notificationFcmToken = '/notifications/fcm-token';
   static const String notificationBroadcast = '/notifications/broadcast';
 
-  // Announcements (Teacher & Parent)
-  static const String announcements = '/announcements';
+  // Parent Dashboard
+  static const String parentDashboardAttendance = '/parent/dashboard/student-attendance';
+  static const String parentDashboardUpcomingExams = '/parent/dashboard/upcoming-exams';
 
   // Attendance endpoints (Teacher)
   static const String attendanceCheckIn = '/attendance/check-in';

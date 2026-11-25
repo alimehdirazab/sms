@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../bloc/auth_bloc.dart';
 import '../../../core/routes/app_router.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/animated_button.dart';
 
@@ -56,11 +57,10 @@ class _LoginScreenState extends State<LoginScreen> {
             context.goNamed(RouteNames.parentHome);
           }
         } else if (state is AuthError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: AppColors.danger,
-            ),
+          AppSnackBar.showError(
+            context,
+            message: state.message,
+            onRetry: _handleLogin,
           );
         }
       },
@@ -89,32 +89,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         // EduCore Brand Logo Mark
                         Center(
                           child: Container(
-                            width: 52,
-                            height: 52,
+                            width: 64,
+                            height: 64,
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF3B2F8F),
-                                  Color(0xFF231A5C),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
                               boxShadow: const [
                                 BoxShadow(
-                                  color: Color(0x3D4C3AAA),
-                                  blurRadius: 12,
+                                  color: Color(0x22000000),
+                                  blurRadius: 14,
                                   offset: Offset(0, 4),
                                 ),
                               ],
                             ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.school_rounded,
-                                size: 26,
-                                color: Colors.white,
-                              ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Image.asset(
+                              'assets/images/app-icon.png',
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),

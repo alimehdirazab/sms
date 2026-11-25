@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
+import '../../../core/network/api_error_handler.dart';
 import '../../auth/models/marks_model.dart';
+import '../models/parent_dashboard_models.dart';
 
 class ParentExamRepository {
   final ApiClient apiClient;
@@ -122,13 +124,52 @@ class ParentExamRepository {
     }
   }
 
-  String _extractErrorMessage(DioException e, String fallback) {
-    if (e.response?.data is Map<String, dynamic>) {
-      final data = e.response!.data as Map<String, dynamic>;
-      return data['message']?.toString() ??
-          data['error']?.toString() ??
-          fallback;
+  /// GET /parent/dashboard/student-attendance?studentId={{studentId}}
+  Future<StudentAttendanceDashboardModel?> getStudentAttendanceDashboard(String studentId) async {
+    try {
+      final response = await apiClient.dio.get(
+        ApiConstants.parentDashboardAttendance,
+        queryParameters: {'studentId': studentId},
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['data'] is Map<String, dynamic>) {
+        return StudentAttendanceDashboardModel.fromJson(data['data'] as Map<String, dynamic>);
+      }
+      return null;
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, 'Failed to fetch student attendance'));
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    return e.message ?? fallback;
+  }
+
+  /// GET /parent/dashboard/upcoming-exams?studentId={{studentId}}&page=1&limit=3
+  Future<List<UpcomingExamDashboardModel>> getUpcomingExamsDashboard(String studentId, {int limit = 3}) async {
+    try {
+      final response = await apiClient.dio.get(
+        ApiConstants.parentDashboardUpcomingExams,
+        queryParameters: {
+          'studentId': studentId,
+          'page': 1,
+          'limit': limit,
+        },
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['data'] is List) {
+        return (data['data'] as List)
+            .whereType<Map<String, dynamic>>()
+            .map((e) => UpcomingExamDashboardModel.fromJson(e))
+            .toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, 'Failed to fetch upcoming exams'));
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  String _extractErrorMessage(dynamic e, String fallback) {
+    return ApiErrorHandler.extract(e, fallback: fallback);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
+import '../../../core/network/api_error_handler.dart';
 import '../../../core/notifications/fcm_service.dart';
 import '../../../core/storage/session_storage_service.dart';
 import '../models/auth_response_model.dart';
@@ -140,7 +141,34 @@ class AuthRepository {
     }
   }
 
-  /// 5. POST /auth/logout
+  /// 5. POST /auth/change-password
+  Future<String> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      final response = await apiClient.dio.post(
+        ApiConstants.changePassword,
+        data: {
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword,
+        },
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['message'] != null) {
+        return data['message'].toString();
+      }
+      return 'Password changed successfully.';
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, 'Failed to change password'));
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  /// 6. POST /auth/logout
   Future<void> logout({String? fcmToken}) async {
     try {
       final token = fcmToken ?? await FcmService.getToken(storageService: storageService);
@@ -171,13 +199,7 @@ class AuthRepository {
     return null;
   }
 
-  String _extractErrorMessage(DioException e, String fallback) {
-    if (e.response?.data is Map<String, dynamic>) {
-      final data = e.response!.data as Map<String, dynamic>;
-      return data['message']?.toString() ??
-          data['error']?.toString() ??
-          fallback;
-    }
-    return e.message ?? fallback;
+  String _extractErrorMessage(dynamic e, String fallback) {
+    return ApiErrorHandler.extract(e, fallback: fallback);
   }
 }

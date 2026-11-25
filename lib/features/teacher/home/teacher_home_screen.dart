@@ -64,11 +64,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Announcements',
-            icon: const Icon(Icons.campaign_outlined, size: 20),
-            onPressed: () => context.pushNamed(RouteNames.teacherAnnouncements),
-          ),
-          IconButton(
             tooltip: 'Weekly timetable',
             icon: const Icon(Icons.calendar_view_week_rounded, size: 20),
             onPressed: () =>
@@ -371,12 +366,17 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
 
   Widget _buildCalendarPreview() {
     return BlocBuilder<TeacherBloc, TeacherState>(
-      buildWhen: (_, state) => state is TeacherCalendarLoaded,
+      buildWhen: (_, state) =>
+          state is TeacherCalendarLoaded ||
+          state is TeacherCalendarLoading ||
+          state is TeacherError,
       builder: (context, state) {
-        if (state is! TeacherCalendarLoaded) {
-          return const ShimmerCard(height: 140);
+        if (state is TeacherCalendarLoading) {
+          return const ShimmerCard(height: 120);
         }
-        if (state.events.isEmpty) return const SizedBox.shrink();
+        if (state is! TeacherCalendarLoaded || state.events.isEmpty) {
+          return const SizedBox.shrink();
+        }
         final now = DateTime.now();
         final upcoming = state.events
             .where((e) => e.startsOnOrAfter(now))

@@ -2,62 +2,125 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../auth/bloc/auth_bloc.dart';
-import '../bloc/teacher_bloc.dart';
+
 import '../../../core/routes/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/shimmer_loading.dart';
 import '../../../core/widgets/error_widget.dart';
+import '../../../core/widgets/glossy_3d_avatar.dart';
+import '../../../core/widgets/shimmer_loading.dart';
+import '../../auth/bloc/auth_bloc.dart';
+import '../../shared/widgets/change_password_dialog.dart';
 import '../../shared/widgets/edit_profile_dialog.dart';
+import '../bloc/teacher_bloc.dart';
 
-class TeacherProfileScreen extends StatelessWidget {
+class TeacherProfileScreen extends StatefulWidget {
   const TeacherProfileScreen({super.key});
+
+  @override
+  State<TeacherProfileScreen> createState() => _TeacherProfileScreenState();
+}
+
+class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<TeacherBloc>().add(LoadTeacherProfile());
+  }
+
+  void _openEditProfile() {
+    final authState = context.read<AuthBloc>().state;
+    final user = authState is AuthSuccess ? authState.user : null;
+    final names = (user?.name ?? 'Annemarie Mertens').split(' ');
+    final firstName = names.isNotEmpty ? names.first : 'Annemarie';
+    final lastName = names.length > 1 ? names.sublist(1).join(' ') : 'Mertens';
+
+    EditProfileDialog.show(
+      context,
+      userId: user?.id ?? 3,
+      initialFirstName: firstName,
+      initialLastName: lastName,
+      initialEmail: user?.email ?? 'annemarie.mertens.kgs@school.com',
+      initialPhone: user?.phone ?? '+92 333 1068021',
+      initialCnic: '42301-1039445-2',
+      initialBloodGroup: 'A+',
+      initialFatherName: 'Mertens Senior',
+      initialContactNo1: '+92 333 1068021',
+      initialEmergencyContact: '+92 333 1095422',
+      initialAddress: '6816 De Vlakte, Block 5, Clifton, Karachi',
+      onSuccess: () {
+        context.read<TeacherBloc>().add(LoadTeacherProfile());
+      },
+    );
+  }
+
+  void _confirmLogout() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Sign out',
+          style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Are you sure you want to sign out of Nexira?',
+          style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.poppins(color: AppColors.inkMuted),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<AuthBloc>().add(const LogoutRequested());
+              context.goNamed(RouteNames.login);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.danger,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text(
+              'Sign out',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: const Color(0xFFFAF7F2), // Luxury fintech cream canvas matching Image 3
       appBar: AppBar(
+        backgroundColor: const Color(0xFFFAF7F2),
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF1D1D1F)),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.goNamed(RouteNames.teacherHome);
+            }
+          },
+        ),
         title: Text(
-          'My profile',
+          'Personal Profile',
           style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: AppColors.ink,
-            letterSpacing: 0.15,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF1D1D1F),
           ),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Edit profile',
-            icon: const Icon(Icons.edit_outlined, size: 20),
-            onPressed: () {
-              final authState = context.read<AuthBloc>().state;
-              final user = authState is AuthSuccess ? authState.user : null;
-              final names = (user?.name ?? 'Annemarie Mertens').split(' ');
-              final firstName = names.isNotEmpty ? names.first : 'Annemarie';
-              final lastName = names.length > 1 ? names.sublist(1).join(' ') : 'Mertens';
-
-              EditProfileDialog.show(
-                context,
-                userId: user?.id ?? 3,
-                initialFirstName: firstName,
-                initialLastName: lastName,
-                initialEmail: user?.email ?? 'annemarie.mertens.kgs@school.com',
-                initialPhone: user?.phone ?? '+92 333 1068021',
-                initialCnic: '42301-1039445-2',
-                initialBloodGroup: 'A+',
-                initialFatherName: 'Mertens Senior',
-                initialContactNo1: '+92 333 1068021',
-                initialEmergencyContact: '+92 333 1095422',
-                initialAddress: '6816 De Vlakte, Block 5, Clifton, Karachi',
-                onSuccess: () {
-                  context.read<TeacherBloc>().add(LoadTeacherProfile());
-                },
-              );
-            },
-          ),
-        ],
       ),
       body: BlocBuilder<TeacherBloc, TeacherState>(
         buildWhen: (_, state) =>
@@ -66,283 +129,447 @@ class TeacherProfileScreen extends StatelessWidget {
             state is TeacherProfileError,
         builder: (context, state) {
           if (state is TeacherProfileLoading) {
-            return const ShimmerLoading(itemCount: 5, itemHeight: 72);
+            return const ShimmerLoading(itemCount: 6, itemHeight: 64);
           }
           if (state is TeacherProfileError) {
             return AppErrorWidget(
               message: state.message,
-              onRetry: () {
-                context.read<TeacherBloc>().add(LoadTeacherProfile());
-              },
+              onRetry: () => context.read<TeacherBloc>().add(LoadTeacherProfile()),
             );
           }
-          if (state is TeacherProfileLoaded) {
-            final profile = state.profile;
-            final initials = profile.name
-                .split(' ')
-                .map((e) => e.isNotEmpty ? e[0] : '')
-                .take(2)
-                .join()
-                .toUpperCase();
 
-            return SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              child: Column(
-                children: [
-                  // Profile Avatar matching DESIGN.md Section 5
-                  Center(
-                    child: Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: AppColors.accentTint,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.border, width: 1),
+          final authState = context.read<AuthBloc>().state;
+          final user = authState is AuthSuccess ? authState.user : null;
+
+          final fullName = user?.name.isNotEmpty == true
+              ? user!.name
+              : (state is TeacherProfileLoaded ? state.profile.name : 'Annemarie Mertens');
+          final email = user?.email.isNotEmpty == true
+              ? user!.email
+              : (state is TeacherProfileLoaded ? (state.profile.email ?? 'annemarie.mertens.kgs@school.com') : 'annemarie.mertens.kgs@school.com');
+          final phone = (user?.phone?.isNotEmpty == true)
+              ? user!.phone!
+              : (state is TeacherProfileLoaded ? (state.profile.phoneNumber ?? '+92 333 1068021') : '+92 333 1068021');
+
+          final employeeId = state is TeacherProfileLoaded ? state.profile.employeeId : 'T-1042';
+          final department = state is TeacherProfileLoaded ? state.profile.department : 'Science & Mathematics';
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 100),
+            child: Column(
+              children: [
+                // 1. Glossy 3D Avatar (Image 3)
+                Center(
+                  child: Glossy3DAvatar(
+                    size: 88,
+                    onCameraTap: _openEditProfile,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // 2. Edit Profile Outlined Button (Image 3)
+                OutlinedButton.icon(
+                  onPressed: _openEditProfile,
+                  icon: const Icon(
+                    Icons.person_outline,
+                    size: 18,
+                    color: Color(0xFFFA8C16),
+                  ),
+                  label: Text(
+                    'Edit Profile',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFFA8C16),
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFFA8C16), width: 1.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 3. Form Card with Rounded Fields (Image 3)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 18,
+                        offset: const Offset(0, 4),
                       ),
-                      child: Center(
-                        child: Text(
-                          initials,
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildProfileField(
+                        label: 'Full Name *',
+                        value: fullName,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProfileField(
+                        label: 'Email Address',
+                        value: email,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildMobileField(
+                        label: 'Mobile Number',
+                        value: phone,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProfileField(
+                        label: 'CNIC',
+                        value: '42301-1039445-2',
+                        hintText: 'e.g. xxxxx-xxxxxxx-x',
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProfileField(
+                        label: 'Employee ID',
+                        value: employeeId,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildProfileField(
+                        label: 'Department',
+                        value: department,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                // 4. Navigation & Account Management Actions
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 14,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7E6),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.calendar_view_week_rounded,
+                            color: Color(0xFFFA8C16),
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          'Weekly Timetable',
                           style: GoogleFonts.poppins(
-                            fontSize: 22,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.accent,
+                            color: const Color(0xFF1D1D1F),
                           ),
                         ),
+                        subtitle: Text(
+                          'View class periods and schedules',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11.5,
+                            color: const Color(0xFF8E8E93),
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 15,
+                          color: Color(0xFFC7C7CC),
+                        ),
+                        onTap: () => context.pushNamed(RouteNames.teacherWeeklySchedule),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    profile.name,
-                    style: GoogleFonts.poppins(
-                      fontSize: 26,
-                      fontWeight: FontWeight.normal,
-                      color: AppColors.ink,
-                      letterSpacing: 0.15,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    profile.department,
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: AppColors.inkMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Details Card
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(color: AppColors.border, width: 1),
-                      boxShadow: AppShadows.subtle,
-                    ),
-                    child: Column(
-                      children: [
-                        _buildInfoRow(
-                          Icons.badge_outlined,
-                          'Employee ID',
-                          profile.employeeId,
-                        ),
-                        const Divider(),
-                        _buildInfoRow(
-                          Icons.call_outlined,
-                          'Phone',
-                          profile.phoneNumber ?? 'N/A',
-                        ),
-                        const Divider(),
-                        _buildInfoRow(
-                          Icons.mail_outline_rounded,
-                          'Email',
-                          profile.email ?? 'N/A',
-                        ),
-                        const Divider(),
-                        _buildInfoRow(
-                          Icons.class_outlined,
-                          'Assigned classes',
-                          profile.assignedClasses.join(', '),
-                        ),
-                        const Divider(),
-                        _buildInfoRow(
-                          Icons.admin_panel_settings_outlined,
-                          'Publish rights',
-                          profile.canPublishMarks ? 'Yes' : 'No',
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Quick Navigation Card
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(color: AppColors.border, width: 1),
-                      boxShadow: AppShadows.subtle,
-                    ),
-                    child: Column(
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.calendar_view_week_rounded, size: 20, color: AppColors.accent),
-                          title: Text(
-                            'Weekly timetable',
-                            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink),
+                      const Divider(height: 1, indent: 56, endIndent: 16),
+                      ListTile(
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7E6),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          subtitle: Text(
-                            'Full week schedule',
-                            style: GoogleFonts.poppins(fontSize: 12, color: AppColors.inkMuted),
+                          child: const Icon(
+                            Icons.event_available_rounded,
+                            color: Color(0xFFFA8C16),
+                            size: 20,
                           ),
-                          trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.inkFaint),
-                          onTap: () => context
-                              .pushNamed(RouteNames.teacherWeeklySchedule),
                         ),
-                        const Divider(height: 1, indent: 56),
-                        ListTile(
-                          leading: const Icon(Icons.event_available_rounded, size: 20, color: AppColors.accent),
-                          title: Text(
-                            'Leave applications',
-                            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink),
+                        title: Text(
+                          'Leave Applications',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1D1D1F),
                           ),
-                          subtitle: Text(
-                            'My records & student requests',
-                            style: GoogleFonts.poppins(fontSize: 12, color: AppColors.inkMuted),
-                          ),
-                          trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.inkFaint),
-                          onTap: () =>
-                              context.pushNamed(RouteNames.teacherLeave),
                         ),
-                        const Divider(height: 1, indent: 56),
-                        ListTile(
-                          leading: const Icon(Icons.calendar_month_rounded, size: 20, color: AppColors.accent),
-                          title: Text(
-                            'Academic calendar',
-                            style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.ink),
+                        subtitle: Text(
+                          'Track teacher leaves and student approvals',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11.5,
+                            color: const Color(0xFF8E8E93),
                           ),
-                          subtitle: Text(
-                            'Meetings, exams & campus events',
-                            style: GoogleFonts.poppins(fontSize: 12, color: AppColors.inkMuted),
-                          ),
-                          trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.inkFaint),
-                          onTap: () =>
-                              context.pushNamed(RouteNames.teacherCalendar),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Logout Button (Destructive variant matching DESIGN.md Section 7.1)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showLogoutDialog(context),
-                      icon: const Icon(Icons.logout_rounded, color: AppColors.danger, size: 18),
-                      label: Text(
-                        'Sign out',
-                        style: GoogleFonts.poppins(
-                          color: AppColors.danger,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 15,
+                          color: Color(0xFFC7C7CC),
                         ),
+                        onTap: () => context.pushNamed(RouteNames.teacherLeave),
                       ),
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: AppColors.surface,
-                        side: const BorderSide(color: AppColors.dangerBorder, width: 1),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.md),
+                      const Divider(height: 1, indent: 56, endIndent: 16),
+                      ListTile(
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7E6),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.calendar_month_rounded,
+                            color: Color(0xFFFA8C16),
+                            size: 20,
+                          ),
                         ),
+                        title: Text(
+                          'Academic Calendar',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1D1D1F),
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Campus events, exams & holidays',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11.5,
+                            color: const Color(0xFF8E8E93),
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 15,
+                          color: Color(0xFFC7C7CC),
+                        ),
+                        onTap: () => context.pushNamed(RouteNames.teacherCalendar),
                       ),
-                    ),
+                      const Divider(height: 1, indent: 56, endIndent: 16),
+                      ListTile(
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7E6),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.lock_reset_rounded,
+                            color: Color(0xFFFA8C16),
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          'Change Password',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1D1D1F),
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Update your account security credentials',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11.5,
+                            color: const Color(0xFF8E8E93),
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 15,
+                          color: Color(0xFFC7C7CC),
+                        ),
+                        onTap: () => ChangePasswordDialog.show(context),
+                      ),
+                      const Divider(height: 1, indent: 56, endIndent: 16),
+                      ListTile(
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: AppColors.dangerBg,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.logout_rounded,
+                            color: AppColors.danger,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          'Sign Out',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.danger,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'End current session on this device',
+                          style: GoogleFonts.poppins(
+                            fontSize: 11.5,
+                            color: const Color(0xFF8E8E93),
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 15,
+                          color: Color(0xFFC7C7CC),
+                        ),
+                        onTap: _confirmLogout,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            context.read<TeacherBloc>().add(LoadTeacherProfile());
-          });
-          return const ShimmerLoading(itemCount: 5, itemHeight: 72);
+                ),
+              ],
+            ),
+          );
         },
       ),
     );
   }
 
-  Widget _buildInfoRow(
-    IconData icon,
-    String label,
-    String value,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppColors.inkMuted),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: AppColors.inkMuted,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 13,
-                    color: AppColors.ink,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+  Widget _buildProfileField({
+    required String label,
+    required String value,
+    String? hintText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1D1D1F),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE5E5EA), width: 1.2),
+          ),
+          child: Text(
+            value.isNotEmpty ? value : (hintText ?? ''),
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: value.isNotEmpty
+                  ? const Color(0xFF1D1D1F)
+                  : const Color(0xFF8E8E93),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(
-          'Sign out',
-          style: GoogleFonts.poppins(fontSize: 22, color: AppColors.ink),
-        ),
-        content: Text(
-          'Are you sure you want to sign out of your account?',
-          style: GoogleFonts.poppins(fontSize: 13, color: AppColors.inkSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+  Widget _buildMobileField({
+    required String label,
+    required String value,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF1D1D1F),
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              context.read<AuthBloc>().add(const LogoutRequested());
-              context.goNamed(RouteNames.login);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Sign out'),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFAF8F5),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE5E5EA), width: 1.2),
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              // Pakistan Flag icon
+              Container(
+                width: 24,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00401A),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Row(
+                  children: [
+                    Container(width: 6, color: Colors.white),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          '★',
+                          style: TextStyle(
+                            fontSize: 7,
+                            color: Colors.white.withValues(alpha: 0.9),
+                            height: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1D1D1F),
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.lock_outline_rounded,
+                size: 18,
+                color: Color(0xFF1D1D1F),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

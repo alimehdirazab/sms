@@ -130,38 +130,24 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Logo mark matching DESIGN.md Section 5
+                  // App Icon Mark
                   Container(
-                    width: 72,
-                    height: 72,
+                    width: 88,
+                    height: 88,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF3B2F8F),
-                          Color(0xFF231A5C),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(22),
                       boxShadow: const [
                         BoxShadow(
-                          color: Color(0x474C3AAA),
-                          blurRadius: 20,
+                          color: Color(0x55000000),
+                          blurRadius: 24,
                           offset: Offset(0, 8),
                         ),
                       ],
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        width: 1,
-                      ),
                     ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.school_rounded,
-                        size: 36,
-                        color: Colors.white,
-                      ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(
+                      'assets/images/app-icon.png',
+                      fit: BoxFit.cover,
                     ),
                   ),
                   const SizedBox(height: 24),

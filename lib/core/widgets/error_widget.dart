@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../network/api_error_handler.dart';
 import '../theme/app_colors.dart';
 
 /// Editorial, calm error state matching DESIGN.md Section 1 & 7.8
@@ -15,6 +16,9 @@ class AppErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isNetwork = message == ApiErrorHandler.noInternetMessage ||
+        ApiErrorHandler.isNetworkError(message);
+
     return Center(
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -23,53 +27,74 @@ class AppErrorWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
-                color: AppColors.dangerBg,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.dangerBorder, width: 1),
+                color: isNetwork
+                    ? const Color(0xFFFFF7E6)
+                    : AppColors.dangerBg,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isNetwork
+                      ? const Color(0xFFFFD591)
+                      : AppColors.dangerBorder,
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (isNetwork ? const Color(0xFFFA8C16) : AppColors.danger)
+                        .withValues(alpha: 0.12),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: const Icon(
-                Icons.error_outline_rounded,
-                size: 24,
-                color: AppColors.danger,
+              child: Icon(
+                isNetwork ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
+                size: 28,
+                color: isNetwork ? const Color(0xFFFA8C16) : AppColors.danger,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
-              'Something went wrong',
+              isNetwork ? 'No internet connection' : 'Something went wrong',
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: AppColors.ink,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 320),
               child: Text(
-                message,
+                isNetwork
+                    ? 'Please check your Wi-Fi or mobile data network and try again.'
+                    : message,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.poppins(
                   fontSize: 13,
                   fontWeight: FontWeight.normal,
                   color: AppColors.inkSecondary,
+                  height: 1.4,
                 ),
               ),
             ),
             if (onRetry != null) ...[
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded, size: 16),
+                icon: const Icon(Icons.refresh_rounded, size: 18),
                 label: const Text('Try again'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(120, 38),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFA8C16),
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  minimumSize: const Size(140, 42),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),

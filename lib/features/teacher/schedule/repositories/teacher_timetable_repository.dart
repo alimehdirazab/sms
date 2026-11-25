@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_constants.dart';
+import '../../../../core/network/api_error_handler.dart';
 import '../models/teacher_timetable_model.dart';
 
 class TeacherTimetableRepository {
@@ -24,13 +25,7 @@ class TeacherTimetableRepository {
     }
   }
 
-  String _extractErrorMessage(DioException e, String fallback) {
-    if (e.response?.data is Map<String, dynamic>) {
-      final data = e.response!.data as Map<String, dynamic>;
-      return data['message']?.toString() ??
-          data['error']?.toString() ??
-          fallback;
-    }
-    return e.message ?? fallback;
+  String _extractErrorMessage(dynamic e, String fallback) {
+    return ApiErrorHandler.extract(e, fallback: fallback);
   }
 }

@@ -19,10 +19,8 @@ import '../../features/teacher/calendar/teacher_calendar_screen.dart';
 import '../../features/teacher/schedule/teacher_weekly_schedule_screen.dart';
 import '../../features/teacher/leave/teacher_leave_screen.dart';
 import '../../features/teacher/notifications/teacher_notifications_screen.dart';
-import '../../features/parent/announcements/parent_announcements_screen.dart';
 import '../../features/parent/schedule/parent_timetable_screen.dart';
-import '../../features/teacher/announcements/teacher_announcements_screen.dart';
-import '../widgets/floating_nav_bar.dart';
+import '../widgets/fintech_nav_bar.dart';
 
 class RouteNames {
   static const splash = 'splash';
@@ -38,7 +36,6 @@ class RouteNames {
   static const teacherMarks = 'teacherMarks';
   static const teacherProfile = 'teacherProfile';
   static const teacherNotifications = 'teacherNotifications';
-  static const teacherAnnouncements = 'teacherAnnouncements';
   static const teacherLeave = 'teacherLeave';
   static const teacherApiLeaves = 'teacherApiLeaves';
   static const teacherCalendar = 'teacherCalendar';
@@ -47,7 +44,6 @@ class RouteNames {
   static const parentHome = 'parentHome';
   static const parentMarks = 'parentMarks';
   static const parentNotifications = 'parentNotifications';
-  static const parentAnnouncements = 'parentAnnouncements';
   static const parentProfile = 'parentProfile';
   static const parentLeave = 'parentLeave';
   static const parentApiLeaves = 'parentApiLeaves';
@@ -176,15 +172,6 @@ final appRouter = GoRouter(
                     state: state,
                   ),
                 ),
-                GoRoute(
-                  path: 'announcements',
-                  name: RouteNames.teacherAnnouncements,
-                  parentNavigatorKey: _rootNavigatorKey,
-                  pageBuilder: (context, state) => _buildPageWithTransition(
-                    child: const TeacherAnnouncementsScreen(),
-                    state: state,
-                  ),
-                ),
               ],
             ),
           ],
@@ -271,20 +258,20 @@ final appRouter = GoRouter(
                   ),
                 ),
                 GoRoute(
-                  path: 'announcements',
-                  name: RouteNames.parentAnnouncements,
-                  parentNavigatorKey: _rootNavigatorKey,
-                  pageBuilder: (context, state) => _buildPageWithTransition(
-                    child: const ParentAnnouncementsScreen(),
-                    state: state,
-                  ),
-                ),
-                GoRoute(
                   path: 'timetable',
                   name: RouteNames.parentTimetable,
                   parentNavigatorKey: _rootNavigatorKey,
                   pageBuilder: (context, state) => _buildPageWithTransition(
                     child: const ParentTimetableScreen(),
+                    state: state,
+                  ),
+                ),
+                GoRoute(
+                  path: 'notifications',
+                  name: RouteNames.parentNotifications,
+                  parentNavigatorKey: _rootNavigatorKey,
+                  pageBuilder: (context, state) => _buildPageWithTransition(
+                    child: const ParentNotificationsScreen(),
                     state: state,
                   ),
                 ),
@@ -305,10 +292,10 @@ final appRouter = GoRouter(
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/parent/notifications',
-              name: RouteNames.parentNotifications,
+              path: '/parent/billing',
+              name: 'parentBillingTab',
               pageBuilder: (context, state) =>
-                  const NoTransitionPage(child: ParentNotificationsScreen()),
+                  const NoTransitionPage(child: ParentFeesScreen()),
             ),
           ],
         ),
@@ -357,32 +344,32 @@ class TeacherShell extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       body: navigationShell,
-      bottomNavigationBar: FloatingNavBar(
+      bottomNavigationBar: FintechNavBar(
         currentIndex: navigationShell.currentIndex,
         onTap: (index) => navigationShell.goBranch(
           index,
           initialLocation: index == navigationShell.currentIndex,
         ),
+        centerActionLabel: 'Attendance',
+        onCenterActionTap: () {
+          navigationShell.goBranch(1);
+        },
         items: const [
-          FloatingNavItem(
-            icon: Icons.home_outlined,
-            activeIcon: Icons.home_rounded,
+          FintechNavItem(
+            iconType: 'home',
             label: 'Home',
           ),
-          FloatingNavItem(
-            icon: Icons.fact_check_outlined,
-            activeIcon: Icons.fact_check_rounded,
-            label: 'Attendance',
+          FintechNavItem(
+            iconType: 'discover',
+            label: 'Schedule',
           ),
-          FloatingNavItem(
-            icon: Icons.grade_outlined,
-            activeIcon: Icons.grade_rounded,
+          FintechNavItem(
+            iconType: 'billing',
             label: 'Marks',
           ),
-          FloatingNavItem(
-            icon: Icons.person_outline_rounded,
-            activeIcon: Icons.person_rounded,
-            label: 'Profile',
+          FintechNavItem(
+            iconType: 'account',
+            label: 'Accounts',
           ),
         ],
       ),
@@ -400,32 +387,32 @@ class ParentShell extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       body: navigationShell,
-      bottomNavigationBar: FloatingNavBar(
+      bottomNavigationBar: FintechNavBar(
         currentIndex: navigationShell.currentIndex,
         onTap: (index) => navigationShell.goBranch(
           index,
           initialLocation: index == navigationShell.currentIndex,
         ),
+        centerActionLabel: 'Complaint',
+        onCenterActionTap: () {
+          context.pushNamed(RouteNames.parentLeave);
+        },
         items: const [
-          FloatingNavItem(
-            icon: Icons.home_outlined,
-            activeIcon: Icons.home_rounded,
+          FintechNavItem(
+            iconType: 'home',
             label: 'Home',
           ),
-          FloatingNavItem(
-            icon: Icons.grade_outlined,
-            activeIcon: Icons.grade_rounded,
-            label: 'Marks',
+          FintechNavItem(
+            iconType: 'discover',
+            label: 'Discover',
           ),
-          FloatingNavItem(
-            icon: Icons.notifications_none_rounded,
-            activeIcon: Icons.notifications_rounded,
-            label: 'Alerts',
+          FintechNavItem(
+            iconType: 'billing',
+            label: 'My Billing',
           ),
-          FloatingNavItem(
-            icon: Icons.person_outline_rounded,
-            activeIcon: Icons.person_rounded,
-            label: 'Profile',
+          FintechNavItem(
+            iconType: 'account',
+            label: 'Accounts',
           ),
         ],
       ),

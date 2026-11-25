@@ -20,8 +20,6 @@ import 'features/parent/calendar/repositories/academic_calendar_repository.dart'
 import 'features/parent/notifications/repositories/notification_repository.dart';
 import 'features/teacher/attendance/repositories/teacher_attendance_repository.dart';
 import 'features/teacher/schedule/repositories/teacher_timetable_repository.dart';
-import 'features/announcements/bloc/announcement_bloc.dart';
-import 'features/announcements/repositories/announcement_repository.dart';
 import 'features/parent/repositories/parent_exam_repository.dart';
 import 'features/shared/repositories/timetable_repository.dart';
 
@@ -73,7 +71,6 @@ void main() async {
   );
 
   final notificationRepository = NotificationRepository(apiClient: apiClient);
-  final announcementRepository = AnnouncementRepository(apiClient: apiClient);
   final parentExamRepository = ParentExamRepository(apiClient: apiClient);
   final timetableRepository = TimetableRepository(apiClient: apiClient);
 
@@ -95,7 +92,6 @@ void main() async {
       parentFeeRepository: parentFeeRepository,
       academicCalendarRepository: academicCalendarRepository,
       notificationRepository: notificationRepository,
-      announcementRepository: announcementRepository,
       parentExamRepository: parentExamRepository,
       timetableRepository: timetableRepository,
     ),
@@ -111,7 +107,6 @@ class SchoolManagementApp extends StatelessWidget {
   final ParentFeeRepository parentFeeRepository;
   final AcademicCalendarRepository academicCalendarRepository;
   final NotificationRepository notificationRepository;
-  final AnnouncementRepository announcementRepository;
   final ParentExamRepository parentExamRepository;
   final TimetableRepository timetableRepository;
 
@@ -125,7 +120,6 @@ class SchoolManagementApp extends StatelessWidget {
     required this.parentFeeRepository,
     required this.academicCalendarRepository,
     required this.notificationRepository,
-    required this.announcementRepository,
     required this.parentExamRepository,
     required this.timetableRepository,
   });
@@ -153,9 +147,6 @@ class SchoolManagementApp extends StatelessWidget {
         ),
         RepositoryProvider<NotificationRepository>.value(
           value: notificationRepository,
-        ),
-        RepositoryProvider<AnnouncementRepository>.value(
-          value: announcementRepository,
         ),
         RepositoryProvider<ParentExamRepository>.value(
           value: parentExamRepository,
@@ -190,10 +181,6 @@ class SchoolManagementApp extends StatelessWidget {
               notificationRepository: notificationRepository,
               examRepository: parentExamRepository,
             ),
-          ),
-          BlocProvider<AnnouncementBloc>(
-            create: (_) =>
-                AnnouncementBloc(repository: announcementRepository),
           ),
         ],
         child: MaterialApp.router(

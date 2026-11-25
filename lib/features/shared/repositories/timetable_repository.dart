@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
+import '../../../core/network/api_error_handler.dart';
 import '../models/timetable_item_model.dart';
 
 class TimetableRepository {
@@ -101,13 +102,23 @@ class TimetableRepository {
     return grouped;
   }
 
-  String _extractErrorMessage(DioException e, String fallback) {
-    if (e.response?.data is Map<String, dynamic>) {
-      final data = e.response!.data as Map<String, dynamic>;
-      return data['message']?.toString() ??
-          data['error']?.toString() ??
-          fallback;
+  /// Download timetable PDF as bytes
+  Future<List<int>> exportTimetablePdf({required String academicYearId}) async {
+    try {
+      final response = await apiClient.dio.get<List<int>>(
+        ApiConstants.timetableExportPdf,
+        queryParameters: {'academicYearId': academicYearId},
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return response.data ?? [];
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, 'Failed to export timetable PDF'));
+    } catch (e) {
+      throw Exception(e.toString());
     }
-    return e.message ?? fallback;
+  }
+
+  String _extractErrorMessage(dynamic e, String fallback) {
+    return ApiErrorHandler.extract(e, fallback: fallback);
   }
 }

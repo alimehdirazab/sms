@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_constants.dart';
+import '../../../core/network/api_error_handler.dart';
 import '../models/leave_api_model.dart';
 
 class LeaveRepository {
@@ -220,22 +221,7 @@ class LeaveRepository {
     }
   }
 
-  String _extractErrorMessage(DioException e, String fallback) {
-    if (e.response?.data is Map<String, dynamic>) {
-      final data = e.response!.data as Map<String, dynamic>;
-      final msg = data['message'];
-      if (msg is List && msg.isNotEmpty) {
-        return msg.join(', ');
-      }
-      if (msg is String && msg.isNotEmpty) {
-        return msg;
-      }
-      final err = data['error'];
-      if (err is String && err.isNotEmpty) {
-        return err;
-      }
-      return fallback;
-    }
-    return e.message ?? fallback;
+  String _extractErrorMessage(dynamic e, String fallback) {
+    return ApiErrorHandler.extract(e, fallback: fallback);
   }
 }
